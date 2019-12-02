@@ -1,13 +1,18 @@
 import os
 import json
 import pymongo
-from .document import Experimental_Document
+import pydoc
 
 class AbstractCollection(object):
     _config = None
     _type = None
 
-    def __init__(self, type):
+    @property
+    def type(self):
+        return self._type
+
+
+    def __init__(self, doctype):
         configFile = os.path.join(os.environ.get('HOME'), '.pyhera', 'config.json')
         if os.path.isfile(configFile):
             with open(configFile, 'r') as jsonFile:
@@ -31,50 +36,65 @@ class AbstractCollection(object):
 
             raise IOError(errorMessage)
 
-        self._type = type
+        self._type = doctype
 
     def _getMetadataCollection(self):
+        """
+
+        :return: pymongo 'metadata' collection object
+        """
         mongoClient = pymongo.MongoClient("mongodb://{username}:{password}@{dbIP}:27017/".format(self._config))
         mongoDataBase = mongoClient[self._metaData['dbName']]
         mongoCollection = mongoDataBase['metadata']
         return mongoCollection
 
-    def getDocuments(self, query):
+    def getDocumentsByQuery(self, query):
         """
 
-        :return: Metadata json
+        :return: List of documents
         """
         mongoCollection = self._getMetadataCollection()
 
-        metadataList = mongoCollection.find(query)
+        dataList = mongoCollection.find(query)
 
         documentList = []
-        for metadata in metadataList:
-            documentList.append(getattr('%s_Document'%self._type)(metadata))
+        for data in dataList:
+           documentList.append(pydoc.locate('.document.{type}.Abstract{type}Document'.format(dict(type=self.type))).getDocument(data))
 
         return documentList
 
+    def addDocument(self, data):
+        """
+        Adding a document to the metadata collection
+
+        :param data: The metadata to add
+        :return:
+        """
+        mongoCollection = self._getMetadataCollection()
+        mongoCollection.insert_one(data)
+
+
+
 
 class GIS_Collection(AbstractCollection):
-
     def __init__(self):
-        super.__init__(type='GIS')
+        super().__init__(doctype='GIS')
 
 
 class Experimental_Collection(AbstractCollection):
 
     def __init__(self):
-        super.__init__(type='Experimental')
+        super().__init__(doctype='Experimental')
 
 
 class Numerical_Collection(AbstractCollection):
 
     def __init__(self):
-        super.__init__(type='Numerical')
+        super().__init__(doctype='Numerical')
 
 
 class Analysis_Collection(AbstractCollection):
 
     def __init__(self):
-        super.__init__(type='Analysis')
+        super().__init__(doctype='Analysis')
 

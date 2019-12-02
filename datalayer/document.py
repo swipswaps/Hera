@@ -1,49 +1,54 @@
 import pandas
-import pymongo
 
 class AbstractDocument(object):
-    _metadata = None
+    _data = None
 
-    def __init__(self, metadata):
-        self._metadata = metadata
+    def __init__(self, data):
+        self._data = data
 
     @property
     def type(self):
-        return self._metadata['type']
+        return self._data['type']
 
     @property
-    def project(self):
-        return self._metadata['project']
+    def name(self):
+        return self._data['name']
+
+
 
 class GIS_Document(AbstractDocument):
-    def __init__(self, metadata):
-        super.__init__(metadata=metadata)
+    def __init__(self, data):
+        super.__init__(data=data)
 
 
 
 class Experimental_Document(AbstractDocument):
-    def __init__(self, metadata):
-        super.__init__(metadata=metadata)
+    def __init__(self, data):
+        super.__init__(data=data)
     
     def getStations(self):
         """
 
         :return: Stations pandas
+
+        TODO:
+            - Change to a general desc.
+
         """
-        return pandas.DataFrame(self._metadata['stations'])
+        return pandas.DataFrame(self._data['stations'])
 
     def getDevices(self):
         """
 
         :return: Devices pandas
         """
-        return pandas.DataFrame(self._metadata['devices'])
+        return pandas.DataFrame(self._data['devices'])
 
 
 class Numerical_Document(AbstractDocument):
-    def __init__(self, metadata):
-        super.__init__(metadata=metadata)
+    def __init__(self, data):
+        super.__init__(data=data)
 
 class Analysis_Document(AbstractDocument):
-    def __init__(self, metadata):
-        super.__init__(metadata=metadata)
+    def __init__(self, data):
+        super.__init__(data=data)
