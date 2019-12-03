@@ -1,4 +1,3 @@
-import pandas
 
 class AbstractDocument(object):
     _data = None
@@ -17,3 +16,7 @@ class AbstractDocument(object):
     @property
     def name(self):
         return self._data['name']
+
+    @property
+    def id(self):
+        return self._data['_id']

@@ -11,7 +11,6 @@ class AbstractCollection(object):
     def type(self):
         return self._type
 
-
     def __init__(self, doctype):
         configFile = os.path.join(os.environ.get('HOME'), '.pyhera', 'config.json')
         if os.path.isfile(configFile):
@@ -43,8 +42,8 @@ class AbstractCollection(object):
 
         :return: pymongo 'metadata' collection object
         """
-        mongoClient = pymongo.MongoClient("mongodb://{username}:{password}@{dbIP}:27017/".format(self._config))
-        mongoDataBase = mongoClient[self._metaData['dbName']]
+        mongoClient = pymongo.MongoClient("mongodb://{username}:{password}@{dbIP}:27017/".format(**self._config))
+        mongoDataBase = mongoClient[self._config['dbName']]
         mongoCollection = mongoDataBase['metadata']
         return mongoCollection
 
@@ -55,11 +54,13 @@ class AbstractCollection(object):
         """
         mongoCollection = self._getMetadataCollection()
 
+        query.setdefault('type', self.type)
+
         dataList = mongoCollection.find(query)
 
         documentList = []
         for data in dataList:
-           documentList.append(pydoc.locate('.document.{type}.Abstract{type}Document'.format(dict(type=self.type))).getDocument(data))
+            documentList.append(pydoc.locate('pyhera.datalayer.document.{type}.Abstract{type}Document'.format(type=self.type)).getDocument(data))
 
         return documentList
 
@@ -72,8 +73,6 @@ class AbstractCollection(object):
         """
         mongoCollection = self._getMetadataCollection()
         mongoCollection.insert_one(data)
-
-
 
 
 class GIS_Collection(AbstractCollection):

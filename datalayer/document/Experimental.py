@@ -4,10 +4,10 @@ import pandas
 
 class AbstractExperimentalDocument(AbstractDocument):
     @staticmethod
-    def getDocument(cls, documentJSON):
+    def getDocument(documentJSON):
         docType = documentJSON['fileFormat']
 
-        return pydoc.locate("ExperimentalDocument_%s" % docType)(documentJSON)
+        return pydoc.locate("pyhera.datalayer.document.Experimental.ExperimentalDocument_%s" % docType)(documentJSON)
 
     def __init__(self, data):
         super().__init__(data=data)
@@ -16,21 +16,16 @@ class AbstractExperimentalDocument(AbstractDocument):
         """
 
         :return: pandas of the relevant key
-
-        TODO:
-            - Change to a general desc.
-
         """
         return pandas.DataFrame(self.data['desc'][key])
 
     def getDescKeys(self):
-        return self.data['desc'].keys()
+        return list(self.data['desc'].keys())
+
 
 class ExperimentalDocument_HDF(AbstractExperimentalDocument):
     def __init__(self, data):
         super().__init__(data=data)
-
-
 
 
 class ExperimentalDocument_Parquet(AbstractExperimentalDocument):
