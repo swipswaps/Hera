@@ -1,7 +1,9 @@
+from mongoengine import *
 import os
 import json
 import pymongo
 import pydoc
+
 
 class AbstractCollection(object):
     _config = None
@@ -15,7 +17,7 @@ class AbstractCollection(object):
         configFile = os.path.join(os.environ.get('HOME'), '.pyhera', 'config.json')
         if os.path.isfile(configFile):
             with open(configFile, 'r') as jsonFile:
-                self._config = json.load(jsonFile)
+                mongoConfig = json.load(jsonFile)
         else:
             configData = dict(username='{username}',
                               password='{password}',
@@ -35,16 +37,17 @@ class AbstractCollection(object):
 
             raise IOError(errorMessage)
 
+        self._config = mongoConfig
         self._type = doctype
 
     def _getMetadataCollection(self):
         """
 
-        :return: pymongo 'metadata' collection object
+        :return: pymongo 'Metadata' collection object
         """
         mongoClient = pymongo.MongoClient("mongodb://{username}:{password}@{dbIP}:27017/".format(**self._config))
         mongoDataBase = mongoClient[self._config['dbName']]
-        mongoCollection = mongoDataBase['metadata']
+        mongoCollection = mongoDataBase['Metadata']
         return mongoCollection
 
     def getDocumentsByQuery(self, query):
@@ -66,7 +69,7 @@ class AbstractCollection(object):
 
     def addDocument(self, data):
         """
-        Adding a document to the metadata collection
+        Adding a document to the Metadata collection
 
         :param data: The metadata to add
         :return:

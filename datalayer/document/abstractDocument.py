@@ -11,12 +11,16 @@ class AbstractDocument(object):
 
     @property
     def type(self):
-        return self._data['type']
+        return self.data['type']
 
     @property
     def name(self):
-        return self._data['name']
+        return self.data['name']
+
+    @property
+    def resource(self):
+        return self.data['resource']
 
     @property
     def id(self):
-        return self._data['_id']
+        return self.data['_id']
