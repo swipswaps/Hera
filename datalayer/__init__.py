@@ -5,4 +5,4 @@ Experimental = Experimental_Collection()
 Numerical = Numerical_Collection()
 Analysis = Analysis_Collection()
 
-Metadata = AbstractCollection()
+All = AbstractCollection()

@@ -1,79 +1,32 @@
-from mongoengine import *
-import os
-import json
 import pymongo
 import pydoc
+from .mongoEngineInitialize import Metadata,GISMetadata,ExperimentalMetadata,NumericalMetadata,AnalysisMetadata
+from mongoengine import ValidationError
 
 class AbstractCollection(object):
     _metadataCol = None
     _datatypeCol = None
-    _config = None
     _type = None
 
     @property
     def type(self):
         return self._type
 
-    def __init__(self, type=None):
-
-        configFile = os.path.join(os.environ.get('HOME'), '.pyhera', 'config.json')
-        if os.path.isfile(configFile):
-            with open(configFile, 'r') as jsonFile:
-                mongoConfig = json.load(jsonFile)
-        else:
-            configData = dict(username='{username}',
-                              password='{password}',
-                              dbIP='{databaseIP}',
-                              dbName='{databaseName}'
-                              )
-
-            if not os.path.isdir(os.path.dirname(configFile)):
-                os.makedirs(os.path.dirname(configFile))
-
-            with open(configFile, 'w') as jsonFile:
-                json.dump(configData, jsonFile, indent=4, sort_keys=True)
-
-            errorMessage = "The config file doesn't exist in the default directory.\n" \
-                           "A default config data file named '{}' was created. Please fill it and try again.".format(
-                configFile)
-
-            raise IOError(errorMessage)
-
-        connect(alias='%s-alias' % mongoConfig['dbName'],
-                db=mongoConfig['dbName'],
-                username=mongoConfig['username'],
-                password=mongoConfig['password'],
-                authentication_source='admin'
-                )
-
-        class Metadata(DynamicDocument):
-            name = StringField(required=True)
-            type = StringField(required=True)
-            resource = StringField(required=True)
-            meta = {'db_alias': '%s-alias' % mongoConfig['dbName'],
-                    'allow_inheritance': True}
-
-        class GISMetadata(Metadata):
-            pass
-
-        class ExperimentalMetadata(Metadata):
-            fileFormat = StringField(required=True)
-
-        class NumericalMetadata(Metadata):
-            pass
-
-        class AnalysisMetadata(Metadata):
-            pass
+    def __init__(self, ctype=None):
+        self._type = ctype
 
         if self.type is None:
             self._metadataCol = Metadata
         else:
-            self._metadataCol = getattr('%sMetadata' % self.type)
-        self._config = mongoConfig
+            self._metadataCol = globals()['%sMetadata' % self.type]
+
 
     def getDocuments(self, **kwargs):
         if self.type is not None:
             kwargs['type'] = self.type
+        docList = []
+        for doc in self._metadataCol.objects(**kwargs):
+            docList.append(pydoc.locate('pyhera.datalayer.document.{type}.Abstract{type}Document'.format(type=self.type)).getDocuments(doc))
         return self._metadataCol.objects(**kwargs)
 
     def addDocument(self, **kwargs):
@@ -124,23 +77,24 @@ class AbstractCollection(object):
 
 class GIS_Collection(AbstractCollection):
     def __init__(self):
-        super().__init__(type='GIS')
+        super().__init__(ctype='GIS')
 
 
 class Experimental_Collection(AbstractCollection):
 
     def __init__(self):
-        super().__init__(type='Experimental')
+        super().__init__(ctype='Experimental')
 
 
 class Numerical_Collection(AbstractCollection):
 
     def __init__(self):
-        super().__init__(type='Numerical')
+        super().__init__(ctype='Numerical')
 
 
 class Analysis_Collection(AbstractCollection):
 
     def __init__(self):
-        super().__init__(type='Analysis')
+        super().__init__(ctype='Analysis')
+
 
