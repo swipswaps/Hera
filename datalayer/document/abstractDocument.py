@@ -1,26 +1,30 @@
+import json
 
 class AbstractDocument(object):
-    _data = None
+    _doc = None
 
-    def __init__(self, data):
-        self._data = data
+    def __init__(self, doc):
+        self._doc = doc
 
     @property
     def data(self):
-        return self._data
+        return json.loads(self._doc.to_json())
 
     @property
     def type(self):
-        return self.data['type']
+        return self._doc.type
 
     @property
     def name(self):
-        return self.data['name']
+        return self._doc.name
 
     @property
     def resource(self):
-        return self.data['resource']
+        return self._doc.resource
 
     @property
     def id(self):
-        return self.data['_id']
+        return self._doc.id
+
+    def save(self):
+        self._doc.save()

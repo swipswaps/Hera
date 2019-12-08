@@ -4,8 +4,9 @@ import json
 import pymongo
 import pydoc
 
-
 class AbstractCollection(object):
+    _metadataCol = None
+    _datatypeCol = None
     _config = None
     _type = None
 
@@ -13,7 +14,8 @@ class AbstractCollection(object):
     def type(self):
         return self._type
 
-    def __init__(self, doctype):
+    def __init__(self, type=None):
+
         configFile = os.path.join(os.environ.get('HOME'), '.pyhera', 'config.json')
         if os.path.isfile(configFile):
             with open(configFile, 'r') as jsonFile:
@@ -37,8 +39,50 @@ class AbstractCollection(object):
 
             raise IOError(errorMessage)
 
+        connect(alias='%s-alias' % mongoConfig['dbName'],
+                db=mongoConfig['dbName'],
+                username=mongoConfig['username'],
+                password=mongoConfig['password'],
+                authentication_source='admin'
+                )
+
+        class Metadata(DynamicDocument):
+            name = StringField(required=True)
+            type = StringField(required=True)
+            resource = StringField(required=True)
+            meta = {'db_alias': '%s-alias' % mongoConfig['dbName'],
+                    'allow_inheritance': True}
+
+        class GISMetadata(Metadata):
+            pass
+
+        class ExperimentalMetadata(Metadata):
+            fileFormat = StringField(required=True)
+
+        class NumericalMetadata(Metadata):
+            pass
+
+        class AnalysisMetadata(Metadata):
+            pass
+
+        if self.type is None:
+            self._metadataCol = Metadata
+        else:
+            self._metadataCol = getattr('%sMetadata' % self.type)
         self._config = mongoConfig
-        self._type = doctype
+
+    def getDocuments(self, **kwargs):
+        if self.type is not None:
+            kwargs['type'] = self.type
+        return self._metadataCol.objects(**kwargs)
+
+    def addDocument(self, **kwargs):
+        if self.type is not None:
+            kwargs['type'] = self.type
+        try:
+            self._metadataCol(**kwargs).save()
+        except ValidationError:
+            raise ValidationError("Not all of the required fields are delivered!")
 
     def _getMetadataCollection(self):
         """
@@ -67,7 +111,7 @@ class AbstractCollection(object):
 
         return documentList
 
-    def addDocument(self, data):
+    def addDocument2(self, data):
         """
         Adding a document to the Metadata collection
 
@@ -80,23 +124,23 @@ class AbstractCollection(object):
 
 class GIS_Collection(AbstractCollection):
     def __init__(self):
-        super().__init__(doctype='GIS')
+        super().__init__(type='GIS')
 
 
 class Experimental_Collection(AbstractCollection):
 
     def __init__(self):
-        super().__init__(doctype='Experimental')
+        super().__init__(type='Experimental')
 
 
 class Numerical_Collection(AbstractCollection):
 
     def __init__(self):
-        super().__init__(doctype='Numerical')
+        super().__init__(type='Numerical')
 
 
 class Analysis_Collection(AbstractCollection):
 
     def __init__(self):
-        super().__init__(doctype='Analysis')
+        super().__init__(type='Analysis')
 
