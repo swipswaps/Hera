@@ -25,7 +25,7 @@ class DataMetadata(Metadata):
     meta = {'allow_inheritance': True}
 
     def getData(self):
-        return pydoc.locate('pyhera.datalayer.datahandler.DataHandler_%s' % self.fileFormat).getData(self.resource)
+        return pydoc.locate('pyhera.datalayer.datahandler').getHandler(self.fileFormat).getData(self.resource)
 
 class GISMetadata(DataMetadata):
     pass
@@ -42,8 +42,35 @@ class AnalysisMetadata(DataMetadata):
 # ---------------- Project Documents ---------------------
 
 class ProjectMetadata(Metadata):
-    def getPandas(self, key):
-        return pandas.DataFrame(self.desc[key])
 
-    def getDescKeys(self):
+    def get(self, key, defaultValue=None):
+        if key in self.desc.keys():
+            return self._getData(key)
+        else:
+            return defaultValue
+
+    def __getitem__(self, key):
+        fileFormat = self.desc[key]['fileFormat']
+        data = self.desc[key]['data']
+        return pydoc.locate('pyhera.datalayer.datahandler').getHandler(fileFormat).getData(data)
+
+    def keys(self):
         return list(self.desc.keys())
+
+    def values(self):
+        values = []
+        for key in self.keys():
+            values.append(self[key])
+        return values
+
+    def __iter__(self):
+        return iter(self.keys())
+
+    def items(self):
+        items = []
+        for key in self.keys():
+            items.append((key, self[key]))
+        return items
+
+    def __contains__(self, item):
+        return item in self.keys()

@@ -72,9 +72,14 @@ class Project_Collection(AbstractCollection):
         queryResult = QueryResult(self.getDocuments())
         return queryResult.projectName()
 
-    def getProject(self, projectName):
-        return self.getDocuments(projectName=projectName)[0]
+    def __getitem__(self, projectName):
+        try:
+            return self.getDocuments(projectName=projectName)[0]
+        except IndexError:
+            raise KeyError("Project named '%s' doesn't exist" % projectName)
 
+    def __contains__(self, projectName):
+        return projectName in self.namesList()
 
 class QueryResult(object):
     _docList = None
