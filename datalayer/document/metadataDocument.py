@@ -20,12 +20,15 @@ class Metadata(DynamicDocument):
 
 class DataMetadata(Metadata):
     # type = StringField(required=True)
-    resource = StringField(required=True)
+    resource = DynamicField(required=True)
     fileFormat = StringField(required=True)
     meta = {'allow_inheritance': True}
 
-    def getData(self):
-        return pydoc.locate('pyhera.datalayer.datahandler').getHandler(self.fileFormat).getData(self.resource)
+    def getData(self, usePandas=None):
+        if usePandas is None:
+            return pydoc.locate('pyhera.datalayer.datahandler').getHandler(self.fileFormat).getData(self.resource)
+        else:
+            return pydoc.locate('pyhera.datalayer.datahandler').getHandler(self.fileFormat).getData(self.resource, usePandas)
 
 class GISMetadata(DataMetadata):
     pass
@@ -45,7 +48,7 @@ class ProjectMetadata(Metadata):
 
     def get(self, key, defaultValue=None):
         if key in self.desc.keys():
-            return self._getData(key)
+            return self[key]
         else:
             return defaultValue
 

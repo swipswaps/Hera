@@ -18,10 +18,13 @@ class AbstractCollection(object):
         self._type = ctype
         self._metadataCol = Metadata if self.type is None else globals()['%sMetadata' % self.type]
 
-    def getDocuments(self, **kwargs):
+    def getDocuments(self, projectName, **kwargs):
         # if self.type is not None:
         #     kwargs['type'] = self.type
-        return self._metadataCol.objects(**kwargs)
+        params = {}
+        for key, value in kwargs.items():
+            params['desc__%s' % key] = value
+        return self._metadataCol.objects(projectName=projectName, **params)
 
     def addDocument(self, **kwargs):
         # if self.type is not None:
@@ -29,16 +32,16 @@ class AbstractCollection(object):
         try:
             self._metadataCol(**kwargs).save()
         except ValidationError:
-            raise ValidationError("Not all of the required fields are delivered!")
+            raise ValidationError("Not all of the required fields are delivered.\nOr the field type is not proper.")
 
 
 class Data_Collection(AbstractCollection):
     def __init__(self, ctype=None):
         super().__init__(ctype)
 
-    def getData(self, **kwargs):
-        queryResult = QueryResult(self.getDocuments(**kwargs))
-        return queryResult.getData()
+    def getData(self, projectName, usePandas=None, **kwargs):
+        queryResult = QueryResult(self.getDocuments(projectName=projectName, **kwargs))
+        return queryResult.getData(usePandas)
 
 
 class GIS_Collection(Data_Collection):
@@ -81,16 +84,17 @@ class Project_Collection(AbstractCollection):
     def __contains__(self, projectName):
         return projectName in self.namesList()
 
+
 class QueryResult(object):
     _docList = None
 
     def __init__(self, docList):
         self._docList = docList
 
-    def getData(self):
+    def getData(self, usePandas=None):
         dataList = []
         for doc in self._docList:
-            dataList.append(doc.getData())
+            dataList.append(doc.getData(usePandas))
         try:
             return dask.dataframe.concat(dataList)
         except ValueError:
