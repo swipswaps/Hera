@@ -61,8 +61,79 @@ class AbstractCalculator(object):
         self._saveProperties['fileFormat'] = fileFormat
         self._saveProperties.update(kwargs)
 
-    def compute(self, mode=None):
-        params = list(self.TemporaryData.columns)
+    def _compute(self):
+        self._joinmethod = "left"
+        if self._TemporaryData.columns.empty:
+            raise ValueError("Parameters have not been calculated yet.")
+
+        if self._DataType == 'dask':
+            try:
+                df = self._TemporaryData[[x[0] for x in self._CalculatedParams]].compute()
+            except ValueError as valueError:
+                errorMessage = """A value error occurred while computing the data.
+                                                This is probably because one of the problems bellow:
+                                                1.The time index of the data is not divisible in the sampling window.
+                                                  Please ensure that the sampling window and the time index are matching and try again.
+                                                2.Data is missing. Try using the keyword argument \'isMissingData\' (isMissingData=True).
+
+                                                The error that was raised: %s""" % valueError
+
+                raise ValueError(errorMessage)
+        else:
+            df = self._TemporaryData[self._CalculatedParams]
+
+        if self._InMemoryAvgRef is None:
+            self._InMemoryAvgRef = InMemoryAvgData(df, turbulenceCalculator=self)
+        else:
+            self._InMemoryAvgRef = InMemoryAvgData(pandas.concat([df, self._InMemoryAvgRef], axis=1),
+                                                   turbulenceCalculator=self)
+
+        self._CalculatedParams = []
+
+        return self._InMemoryAvgRef
+
+    def compute(self, mode):
+        return getattr(self, 'compute_%s' % mode)()
+
+    def compute_from_db_and_save(self):
+        params, query = self._params_and_query()
+
+        docExist = list(datalayer.Analysis.getDocuments(params__all=params, start__lt=self.Identifier['end'],
+                                                   end__gt=self.Identifier['start'], **query))
+
+        if docExist:
+            df = docExist[-1].getData(usePandas=True)
+        else:
+            df = self._compute()
+            self._save_to_db(params, query)
+
+        return df
+
+    def compute_from_db_and_not_save(self):
+        params, query = self._params_and_query()
+
+        docExist = list(datalayer.Analysis.getDocuments(params__all=params, start__lt=self.Identifier['end'],
+                                                   end__gt=self.Identifier['start'], **query))
+
+        if docExist:
+            df = docExist[-1].getData(usePandas=True)
+        else:
+            df = self._compute()
+
+        return df
+
+    def compute_not_from_db_and_save(self):
+        df = self._compute()
+        params, query = self._params_and_query()
+        self._save_to_db(params, query)
+        return df
+
+    def compute_not_from_db_and_not_save(self):
+        df = self._compute()
+        return df
+
+    def _params_and_query(self):
+        params = list(self._CalculatedParams)
         query = dict(projectName=self.Identifier['projectName'],
                      station=self.Identifier['station'],
                      instrument=self.Identifier['instrument'],
@@ -70,52 +141,21 @@ class AbstractCalculator(object):
                      start=self.Identifier['start'],
                      end=self.Identifier['end']
                      )
-        docExist = datalayer.Analysis.getDocuments(params__all=params,start__lt=self.Identifier['end'],end__gt=self.Identifier['start'],**query)
-        if docExist:
-            print('exist')
+        return params, query
+
+    def _save_to_db(self, params, query):
+        if self._saveProperties['fileFormat'] is None:
+            raise AttributeError('No save properties are set. Please use set_saveProperties function')
         else:
-            self._joinmethod = "left"
-            if self._TemporaryData.columns.empty:
-                raise ValueError("Parameters have not been calculated yet.")
-
-            if self._DataType == 'dask':
-                try:
-                    df = self._TemporaryData[self._CalculatedParams].compute()
-                except ValueError as valueError:
-                    errorMessage = """A value error occurred while computing the data.
-                                        This is probably because one of the problems bellow:
-                                        1.The time index of the data is not divisible in the sampling window.
-                                          Please ensure that the sampling window and the time index are matching and try again.
-                                        2.Data is missing. Try using the keyword argument \'isMissingData\' (isMissingData=True).
-
-                                        The error that was raised: %s""" % valueError
-
-                    raise ValueError(errorMessage)
-            else:
-                df = self._TemporaryData[self._CalculatedParams]
-
-            if self._InMemoryAvgRef is None:
-                self._InMemoryAvgRef = InMemoryAvgData(df, turbulenceCalculator=self)
-            else:
-                self._InMemoryAvgRef = InMemoryAvgData(pandas.concat([df, self._InMemoryAvgRef], axis=1),
-                                                       turbulenceCalculator=self)
-
-            if self._saveProperties['fileFormat'] is None:
-                raise AttributeError('No save properties are set. Please use set_saveProperties function')
-            else:
-                doc = {}
-                doc['projectName'] = query.pop('projectName')
-                doc['fileFormat'] = self._saveProperties['fileFormat']
-                doc['desc'] = query
-                doc['desc']['start']: self.Identifier['start']
-                doc['desc']['end']: self.Identifier['end']
-                doc['desc']['params'] = params
-                doc.update(getSaveData(data=df, **self._saveProperties))
-                datalayer.Analysis.addDocument(**doc)
-
-        self._CalculatedParams = []
-
-        return self._InMemoryAvgRef
+            doc = {}
+            doc['projectName'] = query.pop('projectName')
+            doc['fileFormat'] = self._saveProperties['fileFormat']
+            doc['desc'] = query
+            doc['desc']['start']: self.Identifier['start']
+            doc['desc']['end']: self.Identifier['end']
+            doc['desc']['params'] = params
+            doc['resource'] = getSaveData(data=self._InMemoryAvgRef, **self._saveProperties)
+            datalayer.Analysis.addDocument(**doc)
 
 
 def getSaveData(fileFormat, **kwargs):
@@ -127,27 +167,22 @@ class SaveDataHandler(object):
     @staticmethod
     def getSaveData_HDF(data, path, key):
         data.to_HDF(path, key)
-        return dict(resource=dict(path=path,
-                                  key=key
-                                  )
+        return dict(path=path,
+                    key=key
                     )
-
-    @staticmethod
-    def getSaveData_dict(data):
-        return dict(resource=data.to_dict('split'))
 
     @staticmethod
     def getSaveData_JSON(data, path=None):
         if path is None:
-            return dict(resource=data.to_json())
+            return data.to_json()
         else:
             data.to_json(path)
-            return dict(resource=path)
+            return path
 
     @staticmethod
     def getSaveData_parquet(data, path):
         data.to_parquet(path)
-        return dict(resource=path)
+        return path
 
 # class CalculatedField(object):
 #

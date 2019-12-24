@@ -22,7 +22,7 @@ class TurbulenceCalculator(AbstractCalculator):
             avg = avg.mean().rename(columns={'u': 'u_bar', 'v': 'v_bar', 'w': 'w_bar', 'T': 'T_bar'})
 
             self._TemporaryData = avg
-            self._CalculatedParams += ['u_bar', 'v_bar', 'w_bar', 'T_bar']
+            self._CalculatedParams += [['u_bar',{}], ['v_bar',{}], ['w_bar',{}], ['T_bar',{}]]
             if self._isMissingData:
                 self._RawData = self._RawData.merge(avg, how='outer', left_index=True, right_index=True)
                 self._RawData = self._RawData.dropna(how='all')
@@ -59,15 +59,15 @@ class TurbulenceCalculator(AbstractCalculator):
         if 'sigmaU' not in self._TemporaryData.columns:
             sigmaU = self._RawData['u'].resample(self.SamplingWindow).std()
             self._TemporaryData['sigmaU'] = sigmaU
-            self._CalculatedParams.append('sigmaU')
+            self._CalculatedParams.append(['sigmaU',{}])
 
             sigmaV = self._RawData['v'].resample(self.SamplingWindow).std()
             self._TemporaryData['sigmaV'] = sigmaV
-            self._CalculatedParams.append('sigmaV')
+            self._CalculatedParams.append(['sigmaV',{}])
 
             sigmaW = self._RawData['w'].resample(self.SamplingWindow).std()
             self._TemporaryData['sigmaW'] = sigmaW
-            self._CalculatedParams.append('sigmaW')
+            self._CalculatedParams.append(['sigmaW',{}])
 
         return self
 
@@ -80,7 +80,7 @@ class TurbulenceCalculator(AbstractCalculator):
             self.Ustar()
             sigmaH = 0.5*numpy.hypot(self._TemporaryData['sigmaU'], self._TemporaryData['sigmaW'])
             self._TemporaryData['sigmaH'] = sigmaH
-            self._CalculatedParams.append('sigmaH')
+            self._CalculatedParams.append(['sigmaH',{}])
 
         return self
 
@@ -93,7 +93,7 @@ class TurbulenceCalculator(AbstractCalculator):
             self.sigmaH()
             sigmaHOverUstar = self._TemporaryData['sigmaH']/self._TemporaryData['Ustar']
             self._TemporaryData['sigmaHOverUstar'] = sigmaHOverUstar
-            self._CalculatedParams.append('sigmaHOverUstar')
+            self._CalculatedParams.append(['sigmaHOverUstar',{}])
 
         return self
 
@@ -106,7 +106,7 @@ class TurbulenceCalculator(AbstractCalculator):
             self.sigma()
             sigmaWOverUstar = self._TemporaryData['sigmaW']/self._TemporaryData['Ustar']
             self._TemporaryData['sigmaWOverUstar'] = sigmaWOverUstar
-            self._CalculatedParams.append('sigmaWOverUstar')
+            self._CalculatedParams.append(['sigmaWOverUstar',{}])
 
         return self
 
@@ -116,16 +116,17 @@ class TurbulenceCalculator(AbstractCalculator):
 
         if 'wind_speed' not in self._RawData.columns:
             self._RawData = self._RawData.assign(wind_speed=lambda x: numpy.hypot(x['u'], x['v']))
+
             resampled = self._RawData['wind_speed']
             resampled = resampled if self.SamplingWindow is None else resampled.resample(self.SamplingWindow)
 
             avg = resampled.mean()
             self._TemporaryData['wind_speed'] = avg
-            self._CalculatedParams.append('wind_speed')
+            self._CalculatedParams.append(['wind_speed',{}])
 
-            std = resampled.std().rename(columns={'wind_speed':'wind_speed_std'})
+            std = resampled.std()#.rename(columns={'wind_speed':'wind_speed_std'})
             self._TemporaryData['wind_speed_std']=std
-            self._CalculatedParams.append('wind_speed_std')
+            self._CalculatedParams.append(['wind_speed_std',{}])
 
         return self
 
@@ -140,17 +141,17 @@ class TurbulenceCalculator(AbstractCalculator):
 
             avg = resampled.apply(lambda x: circmean(x, high=numpy.pi, low=-numpy.pi))
             self._TemporaryData['wind_dir_mathematical'] = avg
-            self._CalculatedParams.append('wind_dir_mathematical')
+            self._CalculatedParams.append(['wind_dir_mathematical',{}])
             avg = numpy.rad2deg(avg+numpy.pi)
             self._TemporaryData['wind_dir_meteorological'] = [int(270-x) if 270-x>=0 else int(630-x) for x in avg.values]
-            self._CalculatedParams.append('wind_dir_meteorological')
+            self._CalculatedParams.append(['wind_dir_meteorological',{}])
 
             std = resampled.apply(lambda x: circstd(x, high=numpy.pi, low=-numpy.pi)).rename(columns={'wind_dir_mathematical': 'wind_dir_mathematical_std'})
             self._TemporaryData['wind_dir_mathematical_std'] = std
-            self._CalculatedParams.append('wind_dir_mathematical_std')
+            self._CalculatedParams.append(['wind_dir_mathematical_std',{}])
             std = numpy.rad2deg(std+numpy.pi)
             self._TemporaryData['wind_dir_meteorological_std'] = [int(270-x) if 270-x>=0 else int(630-x) for x in std.values]
-            self._CalculatedParams.append('wind_dir_meteorological_std')
+            self._CalculatedParams.append(['wind_dir_meteorological_std',{}])
 
         return self
 
@@ -163,7 +164,7 @@ class TurbulenceCalculator(AbstractCalculator):
             self.sigmaH()
             sigmaHOverWindSpeed = self._TemporaryData['sigmaH']/self._TemporaryData['wind_speed']
             self._TemporaryData['sigmaHOverWindSpeed'] = sigmaHOverWindSpeed
-            self._CalculatedParams.append('sigmaHOverWindSpeed')
+            self._CalculatedParams.append(['sigmaHOverWindSpeed',{}])
 
         return self
 
@@ -176,7 +177,7 @@ class TurbulenceCalculator(AbstractCalculator):
             self.sigma()
             sigmaWOverWindSpeed = self._TemporaryData['sigmaW']/self._TemporaryData['wind_speed']
             self._TemporaryData['sigmaWOverWindSpeed'] = sigmaWOverWindSpeed
-            self._CalculatedParams.append('sigmaWOverWindSpeed')
+            self._CalculatedParams.append(['sigmaWOverWindSpeed',{}])
 
         return self
 
@@ -189,7 +190,7 @@ class TurbulenceCalculator(AbstractCalculator):
             self.sigma()
             w3OverSigmaW3 = self._TemporaryData['w3']/self._TemporaryData['sigmaW']**3
             self._TemporaryData['w3OverSigmaW3'] = w3OverSigmaW3
-            self._CalculatedParams.append('w3OverSigmaW3')
+            self._CalculatedParams.append(['w3OverSigmaW3',{}])
 
         return self
 
@@ -201,7 +202,7 @@ class TurbulenceCalculator(AbstractCalculator):
             self.Ustar().wind_speed()
             uStarOverWindPeed = self._TemporaryData['Ustar']/self._TemporaryData['wind_speed']
             self._TemporaryData['uStarOverWindSpeed'] = uStarOverWindPeed
-            self._CalculatedParams.append('uStarOverWindSpeed')
+            self._CalculatedParams.append(['uStarOverWindSpeed',{}])
 
         return self
 
@@ -213,7 +214,7 @@ class TurbulenceCalculator(AbstractCalculator):
             self.fluctuations()
             uu = (self._RawData['up'] * self._RawData['up']).resample(self.SamplingWindow).mean()
             self._TemporaryData['uu'] = uu
-            self._CalculatedParams.append('uu')
+            self._CalculatedParams.append(['uu',{}])
 
         return self
 
@@ -225,7 +226,7 @@ class TurbulenceCalculator(AbstractCalculator):
             self.fluctuations()
             vv = (self._RawData['vp'] * self._RawData['vp']).resample(self.SamplingWindow).mean()
             self._TemporaryData['vv'] = vv
-            self._CalculatedParams.append('vv')
+            self._CalculatedParams.append(['vv',{}])
 
         return self
 
@@ -237,7 +238,7 @@ class TurbulenceCalculator(AbstractCalculator):
             self.fluctuations()
             ww = (self._RawData['wp'] * self._RawData['wp']).resample(self.SamplingWindow).mean()
             self._TemporaryData['ww'] = ww
-            self._CalculatedParams.append('ww')
+            self._CalculatedParams.append(['ww',{}])
 
         return self
 
@@ -249,7 +250,7 @@ class TurbulenceCalculator(AbstractCalculator):
             self.fluctuations()
             wT = (self._RawData['wp'] * self._RawData['Tp']).resample(self.SamplingWindow).mean()
             self._TemporaryData['wT'] = wT
-            self._CalculatedParams.append('wT')
+            self._CalculatedParams.append(['wT',{}])
 
         return self
 
@@ -261,7 +262,7 @@ class TurbulenceCalculator(AbstractCalculator):
             self.fluctuations()
             uv = (self._RawData['up'] * self._RawData['vp']).resample(self.SamplingWindow).mean()
             self._TemporaryData['uv'] = uv
-            self._CalculatedParams.append('uv')
+            self._CalculatedParams.append(['uv',{}])
 
         return self
 
@@ -273,7 +274,7 @@ class TurbulenceCalculator(AbstractCalculator):
             self.fluctuations()
             uw = (self._RawData['up'] * self._RawData['wp']).resample(self.SamplingWindow).mean()
             self._TemporaryData['uw'] = uw
-            self._CalculatedParams.append('uw')
+            self._CalculatedParams.append(['uw',{}])
 
         return self
 
@@ -285,7 +286,7 @@ class TurbulenceCalculator(AbstractCalculator):
             self.fluctuations()
             vw = (self._RawData['vp'] * self._RawData['wp']).resample(self.SamplingWindow).mean()
             self._TemporaryData['vw'] = vw
-            self._CalculatedParams.append('vw')
+            self._CalculatedParams.append(['vw',{}])
 
         return self
 
@@ -297,7 +298,7 @@ class TurbulenceCalculator(AbstractCalculator):
             self.fluctuations()
             www = (self._RawData['wp'] ** 3).resample(self.SamplingWindow).mean()
             self._TemporaryData['w3'] = www
-            self._CalculatedParams.append('w3')
+            self._CalculatedParams.append(['w3',{}])
 
         return self
 
@@ -309,7 +310,7 @@ class TurbulenceCalculator(AbstractCalculator):
             self.fluctuations()
             wwww = (self._RawData['wp'] ** 4).resample(self.SamplingWindow).mean()
             self._TemporaryData['w4'] = wwww
-            self._CalculatedParams.append('w4')
+            self._CalculatedParams.append(['w4',{}])
 
         return self
 
@@ -321,7 +322,7 @@ class TurbulenceCalculator(AbstractCalculator):
             self.uu().vv().ww()
             TKE = 0.5 * (self._TemporaryData['uu'] + self._TemporaryData['vv'] + self._TemporaryData['ww'])
             self._TemporaryData['TKE'] = TKE
-            self._CalculatedParams.append('TKE')
+            self._CalculatedParams.append(['TKE',{}])
 
         return self
 
@@ -337,7 +338,7 @@ class TurbulenceCalculator(AbstractCalculator):
             wp = self._RawData['wp']
             wTKE = (0.5 * (uu + vv + ww) * wp).resample(self.SamplingWindow).mean()
             self._TemporaryData['wTKE'] = wTKE
-            self._CalculatedParams.append('wTKE')
+            self._CalculatedParams.append(['wTKE',{}])
 
         return self
 
@@ -349,7 +350,7 @@ class TurbulenceCalculator(AbstractCalculator):
             self.uw().vw()
             Ustar = (self._TemporaryData['uw'] ** 2 + self._TemporaryData['vw'] ** 2) ** 0.25
             self._TemporaryData['Ustar'] = Ustar
-            self._CalculatedParams.append('Ustar')
+            self._CalculatedParams.append(['Ustar',{}])
 
         return self
 
@@ -361,7 +362,7 @@ class TurbulenceCalculator(AbstractCalculator):
             self.vw().vv().ww()
             Rvw = self._TemporaryData['vw'] / numpy.sqrt(self._TemporaryData['vv'] * self._TemporaryData['ww'])
             self._TemporaryData['Rvw'] = Rvw
-            self._CalculatedParams.append('Rvw')
+            self._CalculatedParams.append(['Rvw',{}])
 
         return self
 
@@ -373,7 +374,7 @@ class TurbulenceCalculator(AbstractCalculator):
             self.uw().uu().ww()
             Ruw = self._TemporaryData['uw'] / numpy.sqrt(self._TemporaryData['uu'] * self._TemporaryData['ww'])
             self._TemporaryData['Ruw'] = Ruw
-            self._CalculatedParams.append('Ruw')
+            self._CalculatedParams.append(['Ruw',{}])
 
         return self
 
@@ -386,7 +387,7 @@ class TurbulenceCalculator(AbstractCalculator):
             L = -(self._TemporaryData['T_bar']+273.15) * self._TemporaryData['Ustar'] ** 3 / (
                         self.Karman * g * self._TemporaryData['wT'])
             self._TemporaryData['L'] = L
-            self._CalculatedParams.append('L')
+            self._CalculatedParams.append(['L',{}])
 
         return self
 
@@ -398,7 +399,7 @@ class TurbulenceCalculator(AbstractCalculator):
             self.MOLength()
             zoL = zmd / self._TemporaryData['L']
             self._TemporaryData['zoL'] = zoL
-            self._CalculatedParams.append('zoL')
+            self._CalculatedParams.append(['zoL',{}])
 
         return self
 
@@ -420,7 +421,7 @@ class TurbulenceCalculator(AbstractCalculator):
             effectivez = instrumentHeight + H - 0.7 * averagedHeight
             zOverL = effectivez / self._TemporaryData['L']
             self._TemporaryData['zOverL'] = zOverL
-            self._CalculatedParams.append('zOverL')
+            self._CalculatedParams.append(['zOverL',{}])
 
         return self
 
@@ -475,7 +476,7 @@ class TurbulenceCalculator(AbstractCalculator):
             # self._TemporaryData['StabilityMOLength'] = self._TemporaryData.apply(dropMethod,
             #                                                                      axis=1) if self._DataType is 'pandas' \
             #     else self._TemporaryData.apply(dropMethod, meta='str', axis=1)
-            self._CalculatedParams.append('StabilityMOLength')
+            self._CalculatedParams.append(['StabilityMOLength',{}])
 
         return self
 
@@ -524,7 +525,7 @@ class TurbulenceCalculatorSpark(TurbulenceCalculator):
             avg = avg.mean().rename(columns={'u': 'u_bar', 'v': 'v_bar', 'w': 'w_bar', 'T': 'T_bar'})
 
             self._TemporaryData = avg
-            self._CalculatedParams += ['u_bar', 'v_bar', 'w_bar', 'T_bar']
+            self._CalculatedParams += [['u_bar',{}], ['v_bar',{}], ['w_bar',{}], ['T_bar',{}]]
 
             # correcting the first index to be the same as the avg.
             self._RawData = self._RawData.reset_index()

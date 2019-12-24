@@ -63,14 +63,14 @@ class DataHandler_netcdf(object):
         return df
 
 
-class DataHnadler_JSON(object):
+class DataHandler_JSON(object):
 
     @staticmethod
     def getData(resource, usePandas=True):
-        df = dask.dataframe.read_json(resource)
-
         if usePandas:
-            df = df.compute()
+            df = pandas.read_json(resource)
+        else:
+            df = dask.dataframe.read_json(resource)
 
         return df
 

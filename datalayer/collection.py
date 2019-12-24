@@ -3,7 +3,7 @@ import pydoc
 import pandas
 import dask.dataframe
 from .document.metadataDocument import Metadata,GISMetadata,ExperimentalMetadata,NumericalMetadata,AnalysisMetadata,ProjectMetadata
-from mongoengine import ValidationError
+from mongoengine import ValidationError, MultipleObjectsReturned, DoesNotExist
 
 class AbstractCollection(object):
     _metadataCol = None
@@ -17,6 +17,12 @@ class AbstractCollection(object):
     def __init__(self, ctype=None):
         self._type = ctype
         self._metadataCol = Metadata if self.type is None else globals()['%sMetadata' % self.type]
+
+    def getUnique(self, projectName, **kwargs):
+        params = {}
+        for key, value in kwargs.items():
+            params['desc__%s' % key] = value
+        return self._metadataCol.objects.get(projectName=projectName, **params)
 
     def getDocuments(self, projectName, **kwargs):
         # if self.type is not None:
@@ -77,9 +83,12 @@ class Project_Collection(AbstractCollection):
 
     def __getitem__(self, projectName):
         try:
-            return self.getDocuments(projectName=projectName)[0]
-        except IndexError:
-            raise KeyError("Project named '%s' doesn't exist" % projectName)
+            return self.getUnique(projectName=projectName)
+        except MultipleObjectsReturned:
+            raise MultipleObjectsReturned('There are multiple documents for this project.\n'
+                                          'You should have only one document per project in the Project collection.')
+        except DoesNotExist:
+            raise DoesNotExist('There is no document for this project.')
 
     def __contains__(self, projectName):
         return projectName in self.namesList()
@@ -98,7 +107,8 @@ class QueryResult(object):
         try:
             return dask.dataframe.concat(dataList)
         except ValueError:
-            return pandas.DataFrame()
+            raise FileNotFoundError('There is no data for those parameters')
+            #return pandas.DataFrame()
 
     def projectName(self):
         namesList = []
