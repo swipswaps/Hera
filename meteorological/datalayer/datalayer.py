@@ -24,7 +24,7 @@ def getTurbulenceCalculator(projectName, samplingWindow, start=None, end=None, u
         start = projectData['start']
         end = projectData['end']
 
-    rawData = datalayer.Experimental.getData(projectName = projectName, usePandas = usePandas, start__lt=end, end__gt=start, **kwargs)
+    rawData = datalayer.Experimental.getData(projectName = projectName, usePandas = usePandas, start__lte=end, end__gte=start, **kwargs)[start:end]
 
     identifier = {'projectName': projectName,
                   'samplingWindow': samplingWindow,

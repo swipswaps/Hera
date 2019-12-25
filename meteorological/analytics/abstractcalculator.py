@@ -10,6 +10,7 @@ class AbstractCalculator(object):
     _TemporaryData = None
     _Identifier = None
     _CalculatedParams = None
+    _AllCalculatedParams = None
     _InMemoryAvgRef = None
     _Karman = 0.4
     _saveProperties = {'fileFormat':None}
@@ -27,6 +28,7 @@ class AbstractCalculator(object):
         self._TemporaryData = pandas.DataFrame()
         self._Identifier = identifier
         self._CalculatedParams = []
+        self._AllCalculatedParams = []
         self._joinmethod = "left"
 
     @property
@@ -63,8 +65,7 @@ class AbstractCalculator(object):
 
     def _compute(self):
         self._joinmethod = "left"
-        if self._TemporaryData.columns.empty:
-            raise ValueError("Parameters have not been calculated yet.")
+
 
         if self._DataType == 'dask':
             try:
@@ -80,7 +81,15 @@ class AbstractCalculator(object):
 
                 raise ValueError(errorMessage)
         else:
-            df = self._TemporaryData[self._CalculatedParams]
+            df = self._TemporaryData[[x[0] for x in self._CalculatedParams]]
+
+        return df
+
+    def compute(self, mode):
+        if self._TemporaryData.columns.empty:
+            raise ValueError("Parameters have not been calculated yet.")
+        print(self._CalculatedParams)
+        df = getattr(self, 'compute_%s' % mode)()[[x[0] for x in self._CalculatedParams]]
 
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = InMemoryAvgData(df, turbulenceCalculator=self)
@@ -88,12 +97,10 @@ class AbstractCalculator(object):
             self._InMemoryAvgRef = InMemoryAvgData(pandas.concat([df, self._InMemoryAvgRef], axis=1),
                                                    turbulenceCalculator=self)
 
+        self._AllCalculatedParams.extend(self._CalculatedParams)
         self._CalculatedParams = []
 
         return self._InMemoryAvgRef
-
-    def compute(self, mode):
-        return getattr(self, 'compute_%s' % mode)()
 
     def compute_from_db_and_save(self):
         params, query = self._params_and_query()
@@ -123,8 +130,8 @@ class AbstractCalculator(object):
         return df
 
     def compute_not_from_db_and_save(self):
-        df = self._compute()
         params, query = self._params_and_query()
+        df = self._compute()
         self._save_to_db(params, query)
         return df
 
@@ -133,7 +140,7 @@ class AbstractCalculator(object):
         return df
 
     def _params_and_query(self):
-        params = list(self._CalculatedParams)
+        params = list(self._AllCalculatedParams)
         query = dict(projectName=self.Identifier['projectName'],
                      station=self.Identifier['station'],
                      instrument=self.Identifier['instrument'],

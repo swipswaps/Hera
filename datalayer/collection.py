@@ -40,6 +40,9 @@ class AbstractCollection(object):
         except ValidationError:
             raise ValidationError("Not all of the required fields are delivered.\nOr the field type is not proper.")
 
+    def deleteDocuments(self, projectName, **kwargs):
+        QueryResult(self.getDocuments(projectName=projectName, **kwargs)).delete()
+
 
 class Data_Collection(AbstractCollection):
     def __init__(self, ctype=None):
@@ -115,3 +118,7 @@ class QueryResult(object):
         for doc in self._docList:
             namesList.append(doc.projectName)
         return namesList
+
+    def delete(self):
+        for doc in self._docList:
+            doc.delete()

@@ -134,7 +134,7 @@ class TurbulenceCalculator(AbstractCalculator):
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
-        if 'wind_dir' not in self._RawData.columns:
+        if 'wind_dir_mathematical' not in self._RawData.columns:
             self._RawData = self._RawData.assign(wind_dir_mathematical=lambda x: numpy.arctan2(x['v'], x['u']))
             resampled = self._RawData['wind_dir_mathematical']
             resampled = resampled if self.SamplingWindow is None else resampled.resample(self.SamplingWindow)
