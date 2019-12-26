@@ -1,31 +1,28 @@
 from ..analytics.turbulencecalculator import TurbulenceCalculator
-from pyhera import datalayer
-import pandas
+from ... import datalayer
 
 def getTurbulenceCalculator(projectName, samplingWindow, start=None, end=None, usePandas=None, isMissingData=False, **kwargs):
     """
-    This method loads the raw data that corresponds to the requirements (campaign, station, instrument.. ) and
+    This method loads the raw data that corresponds to the requirements (projectName, station, instrument.. ) and
     creates a turbulence calculator with the desirable sampling window.
 
-    :param campaign:        The name of the campaign.
-    :param station:         The name of the station.
-    :param instrument:      The name of the instrument.
-    :param height:          The station height.
-    :param startTime:       Datetime of the begin.
-    :param endTime:         Datetime of the end.
+    :param projectName:     The name of the project.
     :param samplingWindow:  The desirable sampling window (as string).
+    :param start:           Datetime of the begin.
+    :param end:             Datetime of the end.
     :param usePandas:       A flag of whether or not to use pandas.
+    :param isMissingData    A flag if there is a missing data to compute accordingly.
 
     :return: A turbulence calculator of the loaded raw data.
     """
-    projectData = datalayer.Project[projectName]#self.Metadata(campaign = campaign)
+    projectData = datalayer.Project[projectName]
 
     if start is None or end is None:
         start = projectData['start']
         end = projectData['end']
 
     rawData = datalayer.Experimental.getData(projectName = projectName, usePandas = usePandas, start__lte=end, end__gte=start, **kwargs)[start:end]
-
+    print(rawData)
     identifier = {'projectName': projectName,
                   'samplingWindow': samplingWindow,
                   'station': None,
@@ -41,4 +38,4 @@ def getTurbulenceCalculator(projectName, samplingWindow, start=None, end=None, u
         identifier['buildingHeight'] = stationData.get('buildingHeight', None)
         identifier['averagedHeight'] = stationData.get('averagedHeight', None)
 
-    return TurbulenceCalculator(rawData = rawData, metadata = projectData, identifier = identifier, isMissingData=isMissingData)
+    return TurbulenceCalculator(rawData = rawData, metadata=projectData, identifier=identifier, isMissingData=isMissingData)

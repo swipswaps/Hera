@@ -1,6 +1,3 @@
-import pymongo
-import pydoc
-import pandas
 import dask.dataframe
 from .document.metadataDocument import Metadata,GISMetadata,ExperimentalMetadata,NumericalMetadata,AnalysisMetadata,ProjectMetadata
 from mongoengine import ValidationError, MultipleObjectsReturned, DoesNotExist

@@ -2,7 +2,6 @@ from mongoengine import *
 import json
 from ..document import connectToDatabase
 import pydoc
-import pandas
 
 mongoConfig = connectToDatabase()
 

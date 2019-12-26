@@ -1,7 +1,7 @@
 import pandas
 import dask.dataframe.core
 from ..inmemoryavgdata import InMemoryAvgData
-from pyhera import datalayer
+from ... import datalayer
 
 class AbstractCalculator(object):
     _RawData = None
@@ -63,9 +63,17 @@ class AbstractCalculator(object):
         self._saveProperties['fileFormat'] = fileFormat
         self._saveProperties.update(kwargs)
 
+    def _updateInMemoryAvgRef(self, df):
+        if self._InMemoryAvgRef is None:
+            self._InMemoryAvgRef = InMemoryAvgData(df, turbulenceCalculator=self)
+        else:
+            self._InMemoryAvgRef = InMemoryAvgData(pandas.concat([df, self._InMemoryAvgRef], axis=1),
+                                                   turbulenceCalculator=self)
+
+        self._CalculatedParams = []
+
     def _compute(self):
         self._joinmethod = "left"
-
 
         if self._DataType == 'dask':
             try:
@@ -83,72 +91,61 @@ class AbstractCalculator(object):
         else:
             df = self._TemporaryData[[x[0] for x in self._CalculatedParams]]
 
-        return df
+        self._updateInMemoryAvgRef(df)
 
     def compute(self, mode):
         if self._TemporaryData.columns.empty:
             raise ValueError("Parameters have not been calculated yet.")
-        print(self._CalculatedParams)
-        df = getattr(self, 'compute_%s' % mode)()[[x[0] for x in self._CalculatedParams]]
-
-        if self._InMemoryAvgRef is None:
-            self._InMemoryAvgRef = InMemoryAvgData(df, turbulenceCalculator=self)
-        else:
-            self._InMemoryAvgRef = InMemoryAvgData(pandas.concat([df, self._InMemoryAvgRef], axis=1),
-                                                   turbulenceCalculator=self)
 
         self._AllCalculatedParams.extend(self._CalculatedParams)
-        self._CalculatedParams = []
+
+        getattr(self, 'compute_%s' % mode)()
 
         return self._InMemoryAvgRef
 
     def compute_from_db_and_save(self):
-        params, query = self._params_and_query()
-
-        docExist = list(datalayer.Analysis.getDocuments(params__all=params, start__lt=self.Identifier['end'],
+        query = self._query()
+        docExist = list(datalayer.Analysis.getDocuments(params__all=self._AllCalculatedParams, start__lt=self.Identifier['end'],
                                                    end__gt=self.Identifier['start'], **query))
 
-        if docExist:
-            df = docExist[-1].getData(usePandas=True)
-        else:
-            df = self._compute()
-            self._save_to_db(params, query)
 
-        return df
+        if docExist:
+            df = docExist[-1].getData(usePandas=True)[[x[0] for x in self._CalculatedParams]]
+            self._updateInMemoryAvgRef(df)
+        else:
+            self._compute()
+            self._save_to_db(self._AllCalculatedParams, query)
 
     def compute_from_db_and_not_save(self):
-        params, query = self._params_and_query()
+        query = self._query()
 
-        docExist = list(datalayer.Analysis.getDocuments(params__all=params, start__lt=self.Identifier['end'],
+        docExist = list(datalayer.Analysis.getDocuments(params__all=self._AllCalculatedParams, start__lt=self.Identifier['end'],
                                                    end__gt=self.Identifier['start'], **query))
 
         if docExist:
-            df = docExist[-1].getData(usePandas=True)
+            df = docExist[-1].getData(usePandas=True)[[x[0] for x in self._CalculatedParams]]
+            self._updateInMemoryAvgRef(df)
         else:
-            df = self._compute()
-
-        return df
+            self._compute()
 
     def compute_not_from_db_and_save(self):
-        params, query = self._params_and_query()
-        df = self._compute()
-        self._save_to_db(params, query)
-        return df
+        query = self._query()
+        self._compute()
+        self._save_to_db(self._AllCalculatedParams, query)
 
     def compute_not_from_db_and_not_save(self):
-        df = self._compute()
-        return df
+        self._compute()
 
-    def _params_and_query(self):
-        params = list(self._AllCalculatedParams)
+    def _query(self):
         query = dict(projectName=self.Identifier['projectName'],
+                     start=self.Identifier['start'],
+                     end=self.Identifier['end'],
+                     samplingWindow=self.SamplingWindow,
                      station=self.Identifier['station'],
                      instrument=self.Identifier['instrument'],
-                     height=self.Identifier['height'],
-                     start=self.Identifier['start'],
-                     end=self.Identifier['end']
+                     height=self.Identifier['height']
                      )
-        return params, query
+        return query
 
     def _save_to_db(self, params, query):
         if self._saveProperties['fileFormat'] is None:
@@ -158,8 +155,9 @@ class AbstractCalculator(object):
             doc['projectName'] = query.pop('projectName')
             doc['fileFormat'] = self._saveProperties['fileFormat']
             doc['desc'] = query
-            doc['desc']['start']: self.Identifier['start']
-            doc['desc']['end']: self.Identifier['end']
+            doc['desc']['start'] = self.Identifier['start']
+            doc['desc']['end'] = self.Identifier['end']
+            doc['desc']['samplingWindow'] = self.SamplingWindow
             doc['desc']['params'] = params
             doc['resource'] = getSaveData(data=self._InMemoryAvgRef, **self._saveProperties)
             datalayer.Analysis.addDocument(**doc)
