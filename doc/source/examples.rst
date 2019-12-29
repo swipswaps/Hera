@@ -5,5 +5,6 @@ Examples
     :maxdepth: 2
 
     examples/getData
+    examples/getTurbulenceCalculator
 
 
