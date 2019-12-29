@@ -1,6 +1,7 @@
 import dask.dataframe
 from .document.metadataDocument import Metadata,GISMetadata,ExperimentalMetadata,NumericalMetadata,AnalysisMetadata,ProjectMetadata
 from mongoengine import ValidationError, MultipleObjectsReturned, DoesNotExist
+import pandas
 
 class AbstractCollection(object):
     _metadataCol = None
@@ -46,6 +47,14 @@ class Data_Collection(AbstractCollection):
         super().__init__(ctype)
 
     def getData(self, projectName, usePandas=None, **kwargs):
+        """
+        Returns the data by the given parameters.
+
+        :param projectName: The name of the project.
+        :param usePandas: Return the data as pandas if True, dask if False. Default is None, and returns the data depends on the data format.
+        :param kwargs: Other properties of the data.
+        :return: pandas/dask dataframe.
+        """
         queryResult = QueryResult(self.getDocuments(projectName=projectName, **kwargs))
         return queryResult.getData(usePandas)
 
@@ -78,7 +87,12 @@ class Project_Collection(AbstractCollection):
         super().__init__(ctype='Project')
 
     def namesList(self):
-        queryResult = QueryResult(self.getDocuments())
+        """
+        Returns the list of the names of the existing projects.
+
+        :return:  list
+        """
+        queryResult = QueryResult(self._metadataCol.objects())
         return queryResult.projectName()
 
     def __getitem__(self, projectName):
@@ -100,12 +114,15 @@ class QueryResult(object):
     def __init__(self, docList):
         self._docList = docList
 
-    def getData(self, usePandas=None):
+    def getData(self, usePandas):
         dataList = []
         for doc in self._docList:
             dataList.append(doc.getData(usePandas))
         try:
-            return dask.dataframe.concat(dataList)
+            if usePandas:
+                return pandas.concat(dataList)
+            else:
+                return dask.dataframe.concat(dataList)
         except ValueError:
             raise FileNotFoundError('There is no data for those parameters')
             #return pandas.DataFrame()
