@@ -13,6 +13,19 @@ class TurbulenceCalculator(AbstractCalculator):
         super(TurbulenceCalculator, self).__init__(rawData=rawData, metadata=metadata, identifier=identifier)
 
     def fluctuations(self, inMemory=None):
+        """
+        Calculates the mean of u,v,w,T and the fluctuations u',v',w',T'.
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -39,20 +52,20 @@ class TurbulenceCalculator(AbstractCalculator):
 
         return self
 
-    def _ffillNew(self, data):
-        try:
-            return data.ffill()
-        except ValueError:
-            return data.repartition(freq=pandas.to_timedelta(self.SamplingWindow.replace('T', 'min'))).map_partitions(
-                self._ffillNew2)
-
-    def _ffillNew2(data):
-        try:
-            return data.ffill()
-        except:
-            return data.dropna()
-
     def sigma(self, inMemory=None):
+        """
+
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -72,6 +85,19 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def sigmaH(self, inMemory=None):
+        """
+
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -85,6 +111,19 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def sigmaHOverUstar(self, inMemory=None):
+        """
+
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -98,6 +137,20 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def sigmaWOverUstar(self, inMemory=None):
+        """
+
+
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -111,6 +164,19 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def wind_speed(self, inMemory=None):
+        """
+        Calculates the mean and the std of the horizontal speed.
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -131,6 +197,19 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def wind_dir(self, inMemory=None):
+        """
+        Calculates the mean and the std of the wind direction in mathematical and meteorological form.
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -156,6 +235,19 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def sigmaHOverWindSpeed(self, inMemory=None):
+        """
+
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -169,6 +261,19 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def sigmaWOverWindSpeed(self, inMemory=None):
+        """
+
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -182,6 +287,19 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def w3OverSigmaW3(self, inMemory=None):
+        """
+
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -195,6 +313,19 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def uStarOverWindSpeed(self, inMemory=None):
+        """
+
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -207,6 +338,19 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def uu(self, inMemory=None):
+        """
+        Calculates the mean of u'*u'.
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -219,6 +363,19 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def vv(self, inMemory=None):
+        """
+        Calculates the mean of v'*v'.
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -231,6 +388,19 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def ww(self, inMemory=None):
+        """
+        Calculates the mean of w'*w'.
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -243,6 +413,19 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def wT(self, inMemory=None):
+        """
+        Calculates the mean of w'*T'.
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -255,6 +438,19 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def uv(self, inMemory=None):
+        """
+        Calculates the mean of u'*v'.
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -267,6 +463,19 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def uw(self, inMemory=None):
+        """
+        Calculates the mean of u'*w'.
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -279,6 +488,19 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def vw(self, inMemory=None):
+        """
+        Calculates the mean of v'*w'.
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -291,6 +513,19 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def w3(self, inMemory=None):
+        """
+        Calculates the mean of w'^3.
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -303,6 +538,19 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def w4(self, inMemory=None):
+        """
+        Calculates the mean of w'^4.
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -315,6 +563,19 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def TKE(self, inMemory=None):
+        """
+        Calculates the turbulence kinetic energy.
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -327,6 +588,18 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def wTKE(self, inMemory=None):
+        """
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -343,6 +616,18 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def Ustar(self, inMemory=None):
+        """
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -355,6 +640,18 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def Rvw(self, inMemory=None):
+        """
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -367,6 +664,18 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def Ruw(self, inMemory=None):
+        """
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -379,6 +688,19 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def MOLength(self, inMemory=None):
+        """
+        Calculates the Monin-Obukhov length.
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -392,18 +714,51 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def zoL(self, zmd, inMemory=None):
+        """
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        zmd: float
+            Height.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
-        if 'zoL' not in self._TemporaryData.columns:
-            self.MOLength()
-            zoL = zmd / self._TemporaryData['L']
-            self._TemporaryData['zoL'] = zoL
-            self._CalculatedParams.append(['zoL',{}])
+        i = 1
+
+        while 'zoL%s' % i in self._TemporaryData.columns:
+            if ['zoL%s' % i, {'zmd': zmd}] in self._AllCalculatedParams:
+                return self
+            i += 1
+
+        self.MOLength()
+        zoL = zmd / self._TemporaryData['L']
+        self._TemporaryData['zoL%s' % i] = zoL
+        self._CalculatedParams.append(['zoL%s' % i, {'zmd': zmd}])
 
         return self
 
     def zOverL(self, inMemory=None):
+        """
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -426,6 +781,18 @@ class TurbulenceCalculator(AbstractCalculator):
         return self
 
     def Lminus1_masked(self, inMemory=None):
+        """
+
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory
 
@@ -441,24 +808,17 @@ class TurbulenceCalculator(AbstractCalculator):
 
     def StabilityMOLength(self, inMemory=None):
         """
-            Calculates the MOlength stability.
+        Calculates the MOlength stability.
 
-            Version 1.4.0
-            -------------
-                    Drop the data if |U*| <= 0.15
+        Parameters
+        ----------
+        inMemory : boolean
+            Default value is None.
 
-            Version 1.3.3
-            --------------
-                    Drop the data if |wT| < 0.01 or |U*| <= 0.01
-
-	    :math:`L = \frac{\overline{w'T'}}{\frac{du}{dz}}`
-
-            .. versionadded:: 1.1.3
-
-               Drop the data if :math:`|\overline{w'T'}| < 0.01` or :math:`|U^*| < 0.01`
-
-        :param inMemory:
-        :return:
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
         """
         if self._InMemoryAvgRef is None:
             self._InMemoryAvgRef = inMemory

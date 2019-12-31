@@ -11,6 +11,7 @@ Welcome to pyhera's documentation!
    :caption: Contents:
 
    datalayer/architecture
+   meteorological/architecture
    examples
 
 

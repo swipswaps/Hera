@@ -2,6 +2,7 @@ import dask.dataframe
 from .document.metadataDocument import Metadata,GISMetadata,ExperimentalMetadata,NumericalMetadata,AnalysisMetadata,ProjectMetadata
 from mongoengine import ValidationError, MultipleObjectsReturned, DoesNotExist
 import pandas
+import json
 
 class AbstractCollection(object):
     _metadataCol = None
@@ -15,6 +16,9 @@ class AbstractCollection(object):
     def __init__(self, ctype=None):
         self._type = ctype
         self._metadataCol = Metadata if self.type is None else globals()['%sMetadata' % self.type]
+
+    def getDocumentsAsJSON(self, projectName, **kwargs):
+        return QueryResult(self.getDocuments(projectName=projectName, **kwargs)).asJSON()
 
     def getUnique(self, projectName, **kwargs):
         params = {}
@@ -37,6 +41,9 @@ class AbstractCollection(object):
             self._metadataCol(**kwargs).save()
         except ValidationError:
             raise ValidationError("Not all of the required fields are delivered.\nOr the field type is not proper.")
+
+    def addDocumentFromJSON(self, jsonFile):
+        self._metadataCol.from_json(jsonFile).save()
 
     def deleteDocuments(self, projectName, **kwargs):
         QueryResult(self.getDocuments(projectName=projectName, **kwargs)).delete()
@@ -115,9 +122,10 @@ class QueryResult(object):
         self._docList = docList
 
     def getData(self, usePandas):
-        dataList = []
-        for doc in self._docList:
-            dataList.append(doc.getData(usePandas))
+        # dataList = []
+        # for doc in self._docList:
+        #     dataList.append(doc.getData(usePandas))
+        dataList = [doc.getData(usePandas) for doc in self._docList]
         try:
             if usePandas:
                 return pandas.concat(dataList)
@@ -128,11 +136,19 @@ class QueryResult(object):
             #return pandas.DataFrame()
 
     def projectName(self):
-        namesList = []
-        for doc in self._docList:
-            namesList.append(doc.projectName)
+        # namesList = []
+        # for doc in self._docList:
+        #     namesList.append(doc.projectName)
+        namesList = [doc.projectName for doc in self._docList]
         return namesList
 
     def delete(self):
         for doc in self._docList:
             doc.delete()
+
+    def asJSON(self):
+        # jsonList = []
+        # for doc in self._docList:
+        #     jsonList.append(doc.asJSON())
+        jsonList = [doc.asJSON() for doc in self._docList]
+        return jsonList

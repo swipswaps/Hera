@@ -1,4 +1,4 @@
-from pyhera.meteorological.inmemoryrawdata import InMemoryRawData
+from .inmemoryrawdata import InMemoryRawData
 
 class InMemoryAvgData(InMemoryRawData):
     _TurbulenceCalculator = None

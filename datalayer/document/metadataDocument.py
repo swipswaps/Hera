@@ -11,9 +11,11 @@ class Metadata(DynamicDocument):
     meta = {'db_alias': '%s-alias' % mongoConfig['dbName'],
             'allow_inheritance': True}
 
-    @property
-    def data(self):
-        return json.loads(self.to_json())
+    def asJSON(self):
+        docJSON = json.loads(self.to_json())
+        docJSON.pop('_id')
+        docJSON.pop('_cls')
+        return json.dumps(docJSON)
 
 # ---------------- Data Documents ------------------------
 
