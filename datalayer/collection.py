@@ -1,12 +1,11 @@
 import dask.dataframe
-from .document.metadataDocument import Metadata,GISMetadata,ExperimentalMetadata,NumericalMetadata,AnalysisMetadata,ProjectMetadata
+from .document.metadataDocument import Metadata,GISMetadata,MeasurementsMetadata,NumericalMetadata,AnalysisMetadata,ProjectMetadata
 from mongoengine import ValidationError, MultipleObjectsReturned, DoesNotExist
 import pandas
 import json
 
 class AbstractCollection(object):
     _metadataCol = None
-    _datatypeCol = None
     _type = None
 
     @property
@@ -17,8 +16,10 @@ class AbstractCollection(object):
         self._type = ctype
         self._metadataCol = Metadata if self.type is None else globals()['%sMetadata' % self.type]
 
-    def getDocumentsAsJSON(self, projectName, **kwargs):
-        return QueryResult(self.getDocuments(projectName=projectName, **kwargs)).asJSON()
+    def getDocumentsAsDict(self, projectName, **kwargs):
+        dictList = QueryResult(self.getDocuments(projectName=projectName, **kwargs)).asDict()
+        ret = dict(documents=dictList)
+        return ret
 
     def getUnique(self, projectName, **kwargs):
         params = {}
@@ -49,7 +50,7 @@ class AbstractCollection(object):
         QueryResult(self.getDocuments(projectName=projectName, **kwargs)).delete()
 
 
-class Data_Collection(AbstractCollection):
+class Record_Collection(AbstractCollection):
     def __init__(self, ctype=None):
         super().__init__(ctype)
 
@@ -66,24 +67,24 @@ class Data_Collection(AbstractCollection):
         return queryResult.getData(usePandas)
 
 
-class GIS_Collection(Data_Collection):
+class GIS_Collection(Record_Collection):
     def __init__(self):
         super().__init__(ctype='GIS')
 
 
-class Experimental_Collection(Data_Collection):
+class Measurements_Collection(Record_Collection):
 
     def __init__(self):
-        super().__init__(ctype='Experimental')
+        super().__init__(ctype='Measurements')
 
 
-class Numerical_Collection(Data_Collection):
+class Numerical_Collection(Record_Collection):
 
     def __init__(self):
         super().__init__(ctype='Numerical')
 
 
-class Analysis_Collection(Data_Collection):
+class Analysis_Collection(Record_Collection):
 
     def __init__(self):
         super().__init__(ctype='Analysis')
@@ -146,9 +147,9 @@ class QueryResult(object):
         for doc in self._docList:
             doc.delete()
 
-    def asJSON(self):
+    def asDict(self):
         # jsonList = []
         # for doc in self._docList:
         #     jsonList.append(doc.asJSON())
-        jsonList = [doc.asJSON() for doc in self._docList]
+        jsonList = [doc.asDict() for doc in self._docList]
         return jsonList

@@ -11,15 +11,15 @@ class Metadata(DynamicDocument):
     meta = {'db_alias': '%s-alias' % mongoConfig['dbName'],
             'allow_inheritance': True}
 
-    def asJSON(self):
-        docJSON = json.loads(self.to_json())
-        docJSON.pop('_id')
-        docJSON.pop('_cls')
-        return json.dumps(docJSON)
+    def asDict(self):
+        docDict = json.loads(self.to_json())
+        docDict.pop('_id')
+        # docDict.pop('_cls')
+        return docDict
 
 # ---------------- Data Documents ------------------------
 
-class DataMetadata(Metadata):
+class RecordMetadata(Metadata):
     # type = StringField(required=True)
     resource = DynamicField(required=True)
     fileFormat = StringField(required=True)
@@ -31,50 +31,55 @@ class DataMetadata(Metadata):
         else:
             return pydoc.locate('pyhera.datalayer.datahandler').getHandler(self.fileFormat).getData(self.resource, usePandas)
 
-class GISMetadata(DataMetadata):
+class GISMetadata(RecordMetadata):
     pass
 
-class ExperimentalMetadata(DataMetadata):
+class MeasurementsMetadata(RecordMetadata):
     pass
 
-class NumericalMetadata(DataMetadata):
+class NumericalMetadata(RecordMetadata):
     pass
 
-class AnalysisMetadata(DataMetadata):
+class AnalysisMetadata(RecordMetadata):
     pass
 
 # ---------------- Project Documents ---------------------
 
 class ProjectMetadata(Metadata):
 
-    def get(self, key, defaultValue=None):
-        if key in self.desc.keys():
-            return self[key]
-        else:
-            return defaultValue
+    @property
+    def info(self):
+        return self.metadata(self)
 
-    def __getitem__(self, key):
-        fileFormat = self.desc[key]['fileFormat']
-        data = self.desc[key]['data']
-        return pydoc.locate('pyhera.datalayer.datahandler').getHandler(fileFormat).getData(data)
+    class metadata(object):
+        _project = None
 
-    def keys(self):
-        return list(self.desc.keys())
+        def __init__(self, project):
+            if self._project is None:
+                self._project = project
 
-    def values(self):
-        values = []
-        for key in self.keys():
-            values.append(self[key])
-        return values
+        def get(self, key, defaultValue=None):
+            if key in self.keys():
+                return self[key]
+            else:
+                return defaultValue
 
-    def __iter__(self):
-        return iter(self.keys())
+        def __getitem__(self, key):
+            fileFormat = self._project.desc[key]['fileFormat']
+            data = self._project.desc[key]['data']
+            return pydoc.locate('pyhera.datalayer.datahandler').getHandler(fileFormat).getData(data)
 
-    def items(self):
-        items = []
-        for key in self.keys():
-            items.append((key, self[key]))
-        return items
+        def keys(self):
+            return list(self._project.desc.keys())
 
-    def __contains__(self, item):
-        return item in self.keys()
+        def values(self):
+            return [self[key] for key in self.keys()]
+
+        def __iter__(self):
+            return iter(self.keys())
+
+        def items(self):
+            return [(key, self[key]) for key in self.keys()]
+
+        def __contains__(self, item):
+            return item in self.keys()
