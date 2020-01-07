@@ -1,5 +1,5 @@
 import dask.dataframe
-from .document.metadataDocument import Metadata,GISMetadata,MeasurementsMetadata,NumericalMetadata,AnalysisMetadata,ProjectMetadata
+from .document.metadataDocument import Metadata,GIS,Measurements,Numerical,Analysis,Project
 from mongoengine import ValidationError, MultipleObjectsReturned, DoesNotExist
 import pandas
 import json
@@ -14,7 +14,7 @@ class AbstractCollection(object):
 
     def __init__(self, ctype=None):
         self._type = ctype
-        self._metadataCol = Metadata if self.type is None else globals()['%sMetadata' % self.type]
+        self._metadataCol = Metadata if self.type is None else globals()['%s' % self.type]
 
     def getDocumentsAsDict(self, projectName, **kwargs):
         dictList = QueryResult(self.getDocuments(projectName=projectName, **kwargs)).asDict()
@@ -43,8 +43,8 @@ class AbstractCollection(object):
         except ValidationError:
             raise ValidationError("Not all of the required fields are delivered.\nOr the field type is not proper.")
 
-    def addDocumentFromJSON(self, jsonFile):
-        self._metadataCol.from_json(jsonFile).save()
+    def addDocumentFromJSON(self, json_data):
+        self._metadataCol.from_json(json_data).save()
 
     def deleteDocuments(self, projectName, **kwargs):
         QueryResult(self.getDocuments(projectName=projectName, **kwargs)).delete()
@@ -123,9 +123,6 @@ class QueryResult(object):
         self._docList = docList
 
     def getData(self, usePandas):
-        # dataList = []
-        # for doc in self._docList:
-        #     dataList.append(doc.getData(usePandas))
         dataList = [doc.getData(usePandas) for doc in self._docList]
         try:
             if usePandas:
@@ -137,9 +134,6 @@ class QueryResult(object):
             #return pandas.DataFrame()
 
     def projectName(self):
-        # namesList = []
-        # for doc in self._docList:
-        #     namesList.append(doc.projectName)
         namesList = [doc.projectName for doc in self._docList]
         return namesList
 
@@ -148,8 +142,5 @@ class QueryResult(object):
             doc.delete()
 
     def asDict(self):
-        # jsonList = []
-        # for doc in self._docList:
-        #     jsonList.append(doc.asJSON())
         jsonList = [doc.asDict() for doc in self._docList]
         return jsonList

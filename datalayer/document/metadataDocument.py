@@ -2,6 +2,7 @@ from mongoengine import *
 import json
 from ..document import connectToDatabase
 import pydoc
+from ..datahandler import getHandler
 
 mongoConfig = connectToDatabase()
 
@@ -19,7 +20,7 @@ class Metadata(DynamicDocument):
 
 # ---------------- Data Documents ------------------------
 
-class RecordMetadata(Metadata):
+class Record(Metadata):
     # type = StringField(required=True)
     resource = DynamicField(required=True)
     fileFormat = StringField(required=True)
@@ -27,25 +28,27 @@ class RecordMetadata(Metadata):
 
     def getData(self, usePandas=None):
         if usePandas is None:
-            return pydoc.locate('pyhera.datalayer.datahandler').getHandler(self.fileFormat).getData(self.resource)
+            # return pydoc.locate('pyhera.datalayer.datahandler').getHandler(self.fileFormat).getData(self.resource)
+            return getHandler(self.fileFormat).getData(self.resource)
         else:
-            return pydoc.locate('pyhera.datalayer.datahandler').getHandler(self.fileFormat).getData(self.resource, usePandas)
+            # return pydoc.locate('pyhera.datalayer.datahandler').getHandler(self.fileFormat).getData(self.resource, usePandas)
+            return getHandler(self.fileFormat).getData(self.resource, usePandas)
 
-class GISMetadata(RecordMetadata):
+class GIS(Record):
     pass
 
-class MeasurementsMetadata(RecordMetadata):
+class Measurements(Record):
     pass
 
-class NumericalMetadata(RecordMetadata):
+class Numerical(Record):
     pass
 
-class AnalysisMetadata(RecordMetadata):
+class Analysis(Record):
     pass
 
 # ---------------- Project Documents ---------------------
 
-class ProjectMetadata(Metadata):
+class Project(Metadata):
 
     @property
     def info(self):
@@ -67,7 +70,8 @@ class ProjectMetadata(Metadata):
         def __getitem__(self, key):
             fileFormat = self._project.desc[key]['fileFormat']
             data = self._project.desc[key]['data']
-            return pydoc.locate('pyhera.datalayer.datahandler').getHandler(fileFormat).getData(data)
+            # return pydoc.locate('pyhera.datalayer.datahandler').getHandler(fileFormat).getData(data)
+            return getHandler(fileFormat).getData(data)
 
         def keys(self):
             return list(self._project.desc.keys())
