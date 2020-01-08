@@ -1,5 +1,6 @@
 from ..analytics.turbulencecalculator import TurbulenceCalculator
-from ... import datalayer
+from .... import datalayer
+import pandas
 
 def getTurbulenceCalculator(projectName, samplingWindow, start=None, end=None, usePandas=None, isMissingData=False, **kwargs):
     """
@@ -15,13 +16,19 @@ def getTurbulenceCalculator(projectName, samplingWindow, start=None, end=None, u
 
     :return: A turbulence calculator of the loaded raw data.
     """
-    projectData = datalayer.Project[projectName]
+    projectData = datalayer.Project[projectName].info
+
+    if type(start) is str:
+        start = pandas.Timestamp(start)
+
+    if type(end) is str:
+        end = pandas.Timestamp(end)
 
     if start is None or end is None:
         start = projectData['start']
         end = projectData['end']
 
-    rawData = datalayer.Experimental.getData(projectName = projectName, usePandas = usePandas, start__lte=end, end__gte=start, **kwargs)[start:end]
+    rawData = datalayer.Measurements.getData(projectName = projectName, usePandas = usePandas, start__lte=end, end__gte=start, **kwargs)[start:end]
 
     identifier = {'projectName': projectName,
                   'samplingWindow': samplingWindow,

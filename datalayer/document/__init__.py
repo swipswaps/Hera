@@ -31,6 +31,7 @@ def connectToDatabase(dbName = None):
 
     ## build the connection to the db.
     connect(alias='%s-alias' % mongoConfig['dbName'],
+            host=mongoConfig['dbIP'],
             db=dbName,
             username=mongoConfig['username'],
             password=mongoConfig['password'],

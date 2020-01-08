@@ -1,7 +1,7 @@
 import pandas
 import dask.dataframe.core
 from ..inmemoryavgdata import InMemoryAvgData
-from ... import datalayer
+from .... import datalayer
 
 class AbstractCalculator(object):
     _RawData = None
@@ -99,11 +99,11 @@ class AbstractCalculator(object):
 
         self._AllCalculatedParams.extend(self._CalculatedParams)
 
-        getattr(self, 'compute_%s' % mode)()
+        getattr(self, '_compute_%s' % mode)()
 
         return self._InMemoryAvgRef
 
-    def compute_from_db_and_save(self):
+    def _compute_from_db_and_save(self):
         query = self._query()
         docExist = list(datalayer.Analysis.getDocuments(params__all=self._AllCalculatedParams, start__lt=self.Identifier['end'],
                                                    end__gt=self.Identifier['start'], **query))
@@ -116,7 +116,7 @@ class AbstractCalculator(object):
             self._compute()
             self._save_to_db(self._AllCalculatedParams, query)
 
-    def compute_from_db_and_not_save(self):
+    def _compute_from_db_and_not_save(self):
         query = self._query()
 
         docExist = list(datalayer.Analysis.getDocuments(params__all=self._AllCalculatedParams, start__lt=self.Identifier['end'],
@@ -128,12 +128,12 @@ class AbstractCalculator(object):
         else:
             self._compute()
 
-    def compute_not_from_db_and_save(self):
+    def _compute_not_from_db_and_save(self):
         query = self._query()
         self._compute()
         self._save_to_db(self._AllCalculatedParams, query)
 
-    def compute_not_from_db_and_not_save(self):
+    def _compute_not_from_db_and_not_save(self):
         self._compute()
 
     def _query(self):
