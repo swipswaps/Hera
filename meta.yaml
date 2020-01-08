@@ -15,7 +15,6 @@ requirements:
     - scipy 1.3.2
   run:
     - python
-    - setuptools
     - dask 2.9.0
     - mongoengine 0.18.2
     - xarray 0.14.1
@@ -25,6 +24,11 @@ requirements:
 test:
   imports:
     - pyhera
+    - dask
+    - mongoengine
+    - xarray
+    - talbes
+    - scipy
 
 about:
   home: not valid yet
