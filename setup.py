@@ -1,6 +1,6 @@
 from setuptools import setup
 
 setup(
-    name="pyhera",
+    name="hera",
     author="Eden Nitzan"
 )
