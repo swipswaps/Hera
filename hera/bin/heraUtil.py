@@ -1,6 +1,6 @@
 import argparse
 import json
-from pyhera.datalayer import GIS, Measurements, Numerical, Analysis, Project
+from pyhera.hera.datalayer import GIS, Measurements, Numerical, Analysis, Project
 
 
 parser = argparse.ArgumentParser()
