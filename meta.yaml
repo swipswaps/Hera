@@ -27,7 +27,7 @@ test:
     - dask
     - mongoengine
     - xarray
-    - pytables
+    - tables
     - scipy
 
 about:
