@@ -1,6 +1,8 @@
+import pandas
+
 from ..analytics.turbulencecalculator import TurbulenceCalculator
 from .... import datalayer
-import pandas
+
 
 def getTurbulenceCalculator(projectName, samplingWindow, start=None, end=None, usePandas=None, isMissingData=False, **kwargs):
     """

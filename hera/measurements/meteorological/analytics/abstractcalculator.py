@@ -1,7 +1,9 @@
-import pandas
 import dask.dataframe.core
+import pandas
+
 from ..inmemoryavgdata import InMemoryAvgData
 from .... import datalayer
+
 
 class AbstractCalculator(object):
     _RawData = None
@@ -105,8 +107,9 @@ class AbstractCalculator(object):
 
     def _compute_from_db_and_save(self):
         query = self._query()
-        docExist = list(datalayer.Analysis.getDocuments(params__all=self._AllCalculatedParams, start__lt=self.Identifier['end'],
-                                                   end__gt=self.Identifier['start'], **query))
+        docExist = list(
+            datalayer.Analysis.getDocuments(params__all=self._AllCalculatedParams, start__lt=self.Identifier['end'],
+                                            end__gt=self.Identifier['start'], **query))
 
 
         if docExist:
@@ -119,8 +122,9 @@ class AbstractCalculator(object):
     def _compute_from_db_and_not_save(self):
         query = self._query()
 
-        docExist = list(datalayer.Analysis.getDocuments(params__all=self._AllCalculatedParams, start__lt=self.Identifier['end'],
-                                                   end__gt=self.Identifier['start'], **query))
+        docExist = list(
+            datalayer.Analysis.getDocuments(params__all=self._AllCalculatedParams, start__lt=self.Identifier['end'],
+                                            end__gt=self.Identifier['start'], **query))
 
         if docExist:
             df = docExist[-1].getData(usePandas=True)[[x[0] for x in self._CalculatedParams]]

@@ -1,5 +1,5 @@
 package:
-  name: "pyhera"
+  name: "hera"
 
 source:
   git_url: http://mathsrv2:8081/edenn/pyhera.git
@@ -23,7 +23,7 @@ requirements:
 
 test:
   imports:
-    - pyhera
+    - hera
     - dask
     - mongoengine
     - xarray
