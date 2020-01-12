@@ -7,7 +7,7 @@ source:
 
 requirements:
   build:
-    - python
+    - python 3.6.5
     - setuptools
     - dask 2.9.0
     - mongoengine 0.18.2
@@ -15,7 +15,7 @@ requirements:
     - pytables 3.6.1
     - scipy 1.3.2
   run:
-    - python
+    - python 3.6.5
     - dask 2.9.0
     - mongoengine 0.18.2
     - xarray 0.14.1
@@ -24,11 +24,7 @@ requirements:
 
 test:
   imports:
-    - dask
-    - mongoengine
-    - xarray
-    - tables
-    - scipy
+    - hera
 
 about:
   home: not valid yet
