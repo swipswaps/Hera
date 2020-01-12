@@ -24,7 +24,11 @@ requirements:
 
 test:
   imports:
-    - hera
+    - dask
+    - mongoengine
+    - xarray
+    - pytables
+    - scipy
 
 about:
   home: not valid yet
