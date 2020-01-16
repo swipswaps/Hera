@@ -1,5 +1,5 @@
 import dask.dataframe
-from .document.metadataDocument import Metadata,GIS,Measurements,Numerical,Analysis,Project
+from .document.metadataDocument import Metadata,GIS,Measurements,Simulation,Analysis,Project
 from mongoengine import ValidationError, MultipleObjectsReturned, DoesNotExist
 import pandas
 import json
@@ -78,10 +78,10 @@ class Measurements_Collection(Record_Collection):
         super().__init__(ctype='Measurements')
 
 
-class Numerical_Collection(Record_Collection):
+class Simulation_Collection(Record_Collection):
 
     def __init__(self):
-        super().__init__(ctype='Numerical')
+        super().__init__(ctype='Simulation')
 
 
 class Analysis_Collection(Record_Collection):

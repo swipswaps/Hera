@@ -40,7 +40,7 @@ class GIS(Record):
 class Measurements(Record):
     pass
 
-class Numerical(Record):
+class Simulation(Record):
     pass
 
 class Analysis(Record):
