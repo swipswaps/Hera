@@ -64,7 +64,10 @@ class Record_Collection(AbstractCollection):
         :return: pandas/dask dataframe.
         """
         queryResult = QueryResult(self.getDocuments(projectName=projectName, **kwargs))
-        return queryResult.getData(usePandas)
+        if usePandas is None:
+            return queryResult.getData()
+        else:
+            return queryResult.getData(usePandas=usePandas)
 
 
 class GIS_Collection(Record_Collection):
@@ -122,16 +125,17 @@ class QueryResult(object):
     def __init__(self, docList):
         self._docList = docList
 
-    def getData(self, usePandas):
-        dataList = [doc.getData(usePandas) for doc in self._docList]
-        try:
-            if usePandas:
-                return pandas.concat(dataList)
-            else:
-                return dask.dataframe.concat(dataList)
-        except ValueError:
+    def getData(self, **kwargs):
+        dataList = [doc.getData(**kwargs) for doc in self._docList]
+        if len(dataList)==0:
+            if 'usePandas' in kwargs:
+                if kwargs['usePandas']:
+                    return pandas.concat(dataList)
+                else:
+                    return dask.dataframe.concat(dataList)
+        else:
             raise FileNotFoundError('There is no data for those parameters')
-            #return pandas.DataFrame()
+        return dataList[0]
 
     def projectName(self):
         namesList = [doc.projectName for doc in self._docList]
