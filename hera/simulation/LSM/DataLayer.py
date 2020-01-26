@@ -11,6 +11,57 @@ rescaleD = lambda D, data, time_units, q_units: toNumber(toUnum(D, 1 * kg) * min
                                                          q_units * time_units / m ** 3) * data
 rescaleC = lambda C, data, q_units: toNumber(toUnum(C, 1 * kg) / m ** 3, q_units / m ** 3) * data
 
+def getData(dataObj, Q=1*kg, time_units=min, q_units=mg):
+    """
+        Returns the data of the LSM model.
+
+        Rescale  the source to Q if it is not None.
+
+        Change the units of the dosage to mg*minutes/m**3 from []*s/m**3
+
+    :param repository: The name of the repository.
+    :param datasetname: The data set name.
+    :param Q: rescaling of the source  (if not None)
+    :return: xarray with LSM data
+    """
+    if type(dataObj) is str:
+        pattern = os.path.expanduser("%s*.nc" % dataObj)
+
+        Q = 1 * kg if Q is None else toUnum(Q, kg)
+
+        filenameList = []
+        times = []
+        for infilename in glob.glob(pattern):
+            filenameList.append(infilename)
+            timepart = float(".".join(infilename.split(".")[0].split("_")[-2:]))
+            times.append(timepart)
+
+        # Sort according to time.
+        combined = sorted([x for x in zip(filenameList, times)], key=lambda x: x[1])
+
+        finalxarray = xarray.open_mfdataset([x[0] for x in combined])
+    else:
+        finalxarray = dataObj
+
+    dt_minutes = (finalxarray.datetime.diff('datetime')[0].values / numpy.timedelta64(1, 'm')) * min
+
+    finalxarray.attrs['dt'] = dt_minutes.cast_unit(time_units)
+    finalxarray.attrs['Q'] = Q.cast_unit(q_units)
+    finalxarray['Dosage'] = rescaleD(Q * (min).number(time_units), finalxarray['Dosage'], time_units, q_units)
+
+    return finalxarray
+
+def getConcentration(dataObj, Q=1 * kg, time_units=min, q_units=mg):
+
+    if type(dataObj) is str:
+        finalxarray = getData(dataObj, Q, time_units=time_units, q_units=q_units)
+    else:
+        finalxarray = dataObj
+
+    dDosage = finalxarray['Dosage'].diff('datetime').to_dataset().rename({'Dosage': 'dDosage'})
+    dDosage['C'] = dDosage['dDosage'] / finalxarray.attrs['dt'].number()
+
+    return dDosage
 
 class DataLayerLSM(object):
     _Sets = None

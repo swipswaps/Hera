@@ -3,25 +3,21 @@ import numpy
 import xarray
 import glob 
 import os
-from unum import Unum
-from itertools import product
 from unum.units import *
 
 
-def toNetcdf(name,basefiles,topath,addzero=True):
+def toNetcdf(basefiles,addzero=True):
     """
         Converts the data to netcdf.
 
         The dosage are converted to s/m**3 instead of min/m**3.
 
-    :param name:
     :param basefiles:
-    :param topath:
     :param addZero: if true, adds a 0 file at the begining of the files (with time shift 0). 
     :return:
     """
 
-    outfilename = name
+    #outfilename = name
     filenameList = []
     times = []
     for infilename in glob.glob(os.path.join("%s*" % basefiles)):
@@ -34,7 +30,7 @@ def toNetcdf(name,basefiles,topath,addzero=True):
     # Sort according to time.
     combined = sorted([x for x in zip(filenameList, times)], key=lambda x: x[1])
     dt = None
-    pd = None
+
     for (i,curData) in enumerate(combined):
         print("\t... reading %s" % curData[0])
         cur = pandas.read_csv(curData[0], delim_whitespace=True, names=["x", "y", "z", "Dosage"]) #,dtype={'x':int,'y':int,'z':int,'Dosage':float})
@@ -45,14 +41,11 @@ def toNetcdf(name,basefiles,topath,addzero=True):
 
         cur['Dosage'] *= (s / m ** 3).asNumber(min / m ** 3)
         xray = cur.sort_values(['time', 'x', 'y', 'z']).set_index(['time', 'x', 'y', 'z']).to_xarray()
-        datetime = pandas.to_datetime("1-1-2016 12:00") + pandas.to_timedelta(xray.time, 's')
-        
+        import pdb
+        pdb.set_trace()
+        datetime = pandas.to_datetime("1-1-2016 12:00") + pandas.to_timedelta(xray.time.values, 's')
 
-        finalxarray = xarray.DataArray(xray['Dosage'].values, \
-                                       coords={'x': xray.x, 'y': xray.y, 'z': xray.z, 'datetime': datetime},
-                                       dims=['datetime', 'x', 'y', 'z']).to_dataset(name='Dosage')
-
-        finalxarray.to_netcdf(os.path.join(topath,name,"%s_%s.nc" % (outfilename, str(cur['time'].iloc[0]).replace(".", "_"))) )
+        #finalxarray.to_netcdf(os.path.join(topath,name,"%s_%s.nc" % (outfilename, str(cur['time'].iloc[0]).replace(".", "_"))) )
 
         if (i==0) and addzero: 
            zdatetime = [pandas.to_datetime("1-1-2016 12:00")]
@@ -61,4 +54,10 @@ def toNetcdf(name,basefiles,topath,addzero=True):
                                        coords={'x': xray.x, 'y': xray.y, 'z': xray.z, 'datetime': zdatetime},
                                        dims=['datetime', 'x', 'y', 'z']).to_dataset(name='Dosage')
 
-           finalxarray.to_netcdf(os.path.join(topath,name,"%s_0_0.nc" % outfilename) )
+           yield finalxarray
+           #finalxarray.to_netcdf(os.path.join(topath,name,"%s_0_0.nc" % outfilename) )
+
+        finalxarray = xarray.DataArray(xray['Dosage'].values, \
+                                       coords={'x': xray.x, 'y': xray.y, 'z': xray.z, 'datetime': datetime},
+                                       dims=['datetime', 'x', 'y', 'z']).to_dataset(name='Dosage')
+        yield finalxarray
