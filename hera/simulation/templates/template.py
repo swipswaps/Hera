@@ -50,10 +50,10 @@ class LSMTemplate():
                                  )
                        )
             doc = AnalysisDoc(**doc).save()
-            saveDir = os.path.join(saveDir, doc.id)
+            saveDir = os.path.join(saveDir, str(doc.id))
             if to_xarray:
                 doc['resource'] = os.path.join(saveDir, 'netcdf', '*')
-                doc['dataFormat'] = 'netcdf'
+                doc['dataFormat'] = 'netcdf_xarray'
             else:
                 doc['resource'] = saveDir
                 doc['dataFormat'] = 'string'
@@ -90,3 +90,4 @@ class LSMTemplate():
             # save the rest.
             finalxarray = xarray.concat(L, dim="datetime")
             finalxarray.to_netcdf(os.path.join(netcdf_output, "data%s.nc" % i))
+
