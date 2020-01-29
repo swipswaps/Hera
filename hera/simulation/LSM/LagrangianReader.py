@@ -41,8 +41,6 @@ def toNetcdf(basefiles,addzero=True):
 
         cur['Dosage'] *= (s / m ** 3).asNumber(min / m ** 3)
         xray = cur.sort_values(['time', 'x', 'y', 'z']).set_index(['time', 'x', 'y', 'z']).to_xarray()
-        import pdb
-        pdb.set_trace()
         datetime = pandas.to_datetime("1-1-2016 12:00") + pandas.to_timedelta(xray.time.values, 's')
 
         #finalxarray.to_netcdf(os.path.join(topath,name,"%s_%s.nc" % (outfilename, str(cur['time'].iloc[0]).replace(".", "_"))) )
