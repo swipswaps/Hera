@@ -54,11 +54,8 @@ class DataHandler_dict(object):
 class DataHandler_netcdf(object):
 
     @staticmethod
-    def getData(resource, usePandas=False):
-        df = xarray.open_dataset(resource).to_dask_dataframe()
-
-        if usePandas:
-            df = df.compute()
+    def getData(resource):
+        df = xarray.open_mfdataset(resource)
 
         return df
 

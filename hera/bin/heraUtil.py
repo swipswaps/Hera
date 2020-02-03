@@ -1,7 +1,6 @@
 import argparse
 import json
-from pyhera.hera.datalayer import GIS, Measurements, Numerical, Analysis, Project
-
+from pyhera.hera.datalayer import GIS, Measurements, Simulation, Analysis, Project
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dump', dest='dump', action='store_true', help='')
