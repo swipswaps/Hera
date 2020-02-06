@@ -33,7 +33,25 @@ class LSMTemplate():
         return self._document['desc']['modelFolder']
 
     def run(self, saveDir, to_xarray=False, to_database=False):
-        os.makedirs(saveDir, exist_ok=True)
+        """
+        Execute the LSM simulation
+
+        Parameters
+        ----------
+        saveDir: str
+            Path of the directory to put in the model run
+
+        to_xarray: bool
+            Save the simulation results into xarray or not
+
+        to_database: bool
+            Save the simulation run in the database or not
+
+        Returns
+        -------
+        TurbulenceCalculator
+            The object himself.
+        """
 
         # create the input file.
         # paramsMap['wind_dir'] = self.paramsMap['wind_dir_meteorological']
@@ -50,7 +68,7 @@ class LSMTemplate():
                                  )
                        )
             doc = AnalysisDoc(**doc).save()
-            saveDir = os.path.join(saveDir, str(doc.id))
+            saveDir += '_'+str(doc.id)
             if to_xarray:
                 doc['resource'] = os.path.join(saveDir, 'netcdf', '*')
                 doc['dataFormat'] = 'netcdf_xarray'
@@ -59,10 +77,10 @@ class LSMTemplate():
                 doc['dataFormat'] = 'string'
 
             doc.save()
-        else:
-            saveDir = os.path.join(saveDir, 'modelRun')
 
-        os.system('cp -rf %s %s' % (self.modelFolder, saveDir))
+        os.makedirs(saveDir, exist_ok=True)
+
+        os.system('cp -rf %s %s' % (os.path.join(self.modelFolder, '*'), saveDir))
         # write to file.
         ifmc.render(os.path.join(saveDir, 'INPUT'))
 

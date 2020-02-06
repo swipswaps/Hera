@@ -51,7 +51,7 @@ class DataHandler_dict(object):
         return df
 
 
-class DataHandler_netcdf(object):
+class DataHandler_netcdf_xarray(object):
 
     @staticmethod
     def getData(resource):

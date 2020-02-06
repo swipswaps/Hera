@@ -18,7 +18,7 @@ def getTurbulenceCalculator(projectName, samplingWindow, start=None, end=None, u
 
     :return: A turbulence calculator of the loaded raw data.
     """
-    projectData = datalayer.Project[projectName].info
+    projectData = datalayer.Projects[projectName].info
 
     if type(start) is str:
         start = pandas.Timestamp(start)

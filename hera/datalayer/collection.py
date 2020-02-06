@@ -1,5 +1,5 @@
 import dask.dataframe
-from .document.metadataDocument import Metadata,GIS,Measurements,Simulation,Analysis,Project
+from .document.metadataDocument import Metadata,Measurements,Simulations,Analysis,Projects
 from mongoengine import ValidationError, MultipleObjectsReturned, DoesNotExist
 import pandas
 import json
@@ -24,7 +24,10 @@ class AbstractCollection(object):
     def getUnique(self, projectName, **kwargs):
         params = {}
         for key, value in kwargs.items():
-            params['desc__%s' % key] = value
+            if key=='type':
+                params[key] = value
+            else:
+                params['desc__%s' % key] = value
         return self._metadataCol.objects.get(projectName=projectName, **params)
 
     def getDocuments(self, projectName, **kwargs):
@@ -32,7 +35,10 @@ class AbstractCollection(object):
         #     kwargs['type'] = self.type
         params = {}
         for key, value in kwargs.items():
-            params['desc__%s' % key] = value
+            if key=='type':
+                params[key] = value
+            else:
+                params['desc__%s' % key] = value
         return self._metadataCol.objects(projectName=projectName, **params)
 
     def addDocument(self, **kwargs):
@@ -70,21 +76,16 @@ class Record_Collection(AbstractCollection):
             return queryResult.getData(usePandas=usePandas)
 
 
-class GIS_Collection(Record_Collection):
-    def __init__(self):
-        super().__init__(ctype='GIS')
-
-
 class Measurements_Collection(Record_Collection):
 
     def __init__(self):
         super().__init__(ctype='Measurements')
 
 
-class Simulation_Collection(Record_Collection):
+class Simulations_Collection(Record_Collection):
 
     def __init__(self):
-        super().__init__(ctype='Simulation')
+        super().__init__(ctype='Simulations')
 
 
 class Analysis_Collection(Record_Collection):
@@ -93,9 +94,9 @@ class Analysis_Collection(Record_Collection):
         super().__init__(ctype='Analysis')
 
 
-class Project_Collection(AbstractCollection):
+class Projects_Collection(AbstractCollection):
     def __init__(self):
-        super().__init__(ctype='Project')
+        super().__init__(ctype='Projects')
 
     def namesList(self):
         """

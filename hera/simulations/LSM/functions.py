@@ -1,4 +1,4 @@
-from ...datalayer import Simulation, Analysis
+from ...datalayer import Simulations, Analysis
 from ..LSM.DataLayer import SingleSimulation
 from ..templates import LSMTemplate
 import pandas
@@ -11,7 +11,7 @@ def getTemplates(**query):
     :return:
     """
 
-    docList = Simulation.getDocuments(projectName='LSM', **query)
+    docList = Simulations.getDocuments(projectName='LSM', **query)
     return [LSMTemplate(doc) for doc in docList]
 
 def listTemplates(**query):
@@ -20,7 +20,7 @@ def listTemplates(**query):
     :param query:
     :return:
     """
-    docList = Simulation.getDocuments(projectName='LSM', **query)
+    docList = Simulations.getDocuments(projectName='LSM', **query)
     descList = [doc.desc.copy() for doc in docList]
     for (i, desc) in enumerate(descList):
         desc.update({'id':docList[i].id})

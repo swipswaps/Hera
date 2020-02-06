@@ -1,6 +1,6 @@
 Turbulence Calculator
 =====================
 
-.. autoclass:: pyhera.meteorological.analytics.turbulencecalculator.TurbulenceCalculator
+.. autoclass:: pyhera.hera.measurements.meteorological.analytics.turbulencecalculator.TurbulenceCalculator
     :members:
     :undoc-members:

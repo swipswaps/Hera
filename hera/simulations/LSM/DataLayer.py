@@ -1,8 +1,6 @@
 import os
 import xarray
-import json
 import numpy
-import glob
 from unum.units import *
 
 from ..utils import toUnum,toNumber
@@ -47,9 +45,28 @@ class SingleSimulation(object):
         else:
             self._finalxarray = resource.getData()
             if type(self._finalxarray) is str:
-                self._finalxarray = xarray.open_mfdataset(resource.getData())
+                self._finalxarray = xarray.open_mfdataset(self._finalxarray)
 
     def getDosage(self, Q=1 * kg, time_units=min, q_units=mg):
+        """
+        Calculates the dosage
+
+        Parameters
+        ----------
+        Q : unum.units
+            Default value is 1*kg
+
+        time_units: unum.units
+            Default value is min
+
+        q_units: unum.units
+            Default value is mg
+
+        Returns
+        -------
+        self._finalxarray: xarray
+            The calculated dosage in 'Dosage' key
+        """
         dt_minutes = (self._finalxarray.datetime.diff('datetime')[0].values / numpy.timedelta64(1, 'm')) * min
 
         self._finalxarray.attrs['dt'] = dt_minutes.asUnit(time_units)
@@ -60,6 +77,25 @@ class SingleSimulation(object):
         return self._finalxarray
 
     def getConcentration(self, Q=1*kg, time_units=min, q_units=mg):
+        """
+        Calculates the concentration
+
+        Parameters
+        ----------
+        Q : unum.units
+            Default value is 1*kg
+
+        time_units: unum.units
+            Default value is min
+
+        q_units: unum.units
+            Default value is mg
+
+        Returns
+        -------
+        dDosage: xarray
+            The calculated concentration in 'C' key
+        """
         if 'dt' not in self._finalxarray.attrs.keys():
             self.getDosage(Q=Q, time_units=time_units, q_units=q_units)
 

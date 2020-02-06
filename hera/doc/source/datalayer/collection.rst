@@ -1,6 +1,6 @@
 Collection
 ==========
 
-.. autoclass:: pyhera.datalayer.collection.AbstractCollection
+.. autoclass:: pyhera.hera.datalayer.collection.AbstractCollection
     :members:
     :undoc-members:
