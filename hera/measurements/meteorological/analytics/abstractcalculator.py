@@ -158,6 +158,7 @@ class AbstractCalculator(object):
             doc = {}
             doc['projectName'] = query.pop('projectName')
             doc['fileFormat'] = self._saveProperties['fileFormat']
+            doc['type'] = 'meteorological'
             doc['desc'] = query
             doc['desc']['start'] = self.Identifier['start']
             doc['desc']['end'] = self.Identifier['end']
