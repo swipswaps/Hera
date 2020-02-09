@@ -52,6 +52,7 @@ class SingleSimulation(object):
             # self._xray = xarray.open_mfdataset([x[0] for x in combined])
             self._finalxarray = xarray.open_mfdataset(os.path.join(resource, '*.nc'))
         else:
+            self._document = resource
             self._finalxarray = resource.getData()
             if type(self._finalxarray) is str:
                 self._finalxarray = xarray.open_mfdataset(self._finalxarray)
