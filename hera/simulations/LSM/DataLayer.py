@@ -25,6 +25,15 @@ rescaleC = lambda C, data, q_units: toNumber(toUnum(C, 1 * kg) / m ** 3, q_units
 
 class SingleSimulation(object):
     _finalxarray = None
+    _document = None
+
+    @property
+    def params(self):
+        return self._document['desc']['params']
+
+    @property
+    def version(self):
+        return self._document['desc']['version']
 
     def __init__(self, resource):
         if type(resource) is str:
@@ -69,12 +78,12 @@ class SingleSimulation(object):
         """
         dt_minutes = (self._finalxarray.datetime.diff('datetime')[0].values / numpy.timedelta64(1, 'm')) * min
 
-        self._finalxarray.attrs['dt'] = dt_minutes.asUnit(time_units)
-        self._finalxarray.attrs['Q'] = Q.asUnit(q_units)
+        self._finalxarray.attrs['dt'] = toUnum(dt_minutes, time_units)
+        self._finalxarray.attrs['Q'] = toUnum(Q, q_units)
         self._finalxarray['Dosage'] = rescaleD(Q * (min).asNumber(time_units), self._finalxarray['Dosage'], time_units,
                                                q_units)
 
-        return self._finalxarray
+        return self._finalxarray.copy()
 
     def getConcentration(self, Q=1*kg, time_units=min, q_units=mg):
         """
@@ -101,5 +110,6 @@ class SingleSimulation(object):
 
         dDosage = self._finalxarray['Dosage'].diff('datetime').to_dataset().rename({'Dosage': 'dDosage'})
         dDosage['C'] = dDosage['dDosage'] / self._finalxarray.attrs['dt'].asNumber()
+        dDosage.attrs = self._finalxarray.attrs
 
-        return dDosage
+        return dDosage.copy()

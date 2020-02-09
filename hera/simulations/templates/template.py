@@ -1,5 +1,5 @@
 import os
-from ...datalayer.document.metadataDocument import Analysis as AnalysisDoc
+from ...datalayer.document.metadataDocument import Simulations as SimulationsDoc
 from ..LSM import LagrangianReader
 from .inputForModelsCreation import InputForModelsCreator
 import xarray
@@ -26,18 +26,21 @@ class LSMTemplate():
 
     @property
     def modelName(self):
-        return self._document['projectName']
+        return self._document['type']
 
     @property
     def modelFolder(self):
         return self._document['desc']['modelFolder']
 
-    def run(self, saveDir, to_xarray=False, to_database=False):
+    def run(self, projectName, saveDir, to_xarray=False, to_database=False, **kwargs):
         """
         Execute the LSM simulation
 
         Parameters
         ----------
+        projectName: str
+            The project name
+
         saveDir: str
             Path of the directory to put in the model run
 
@@ -46,29 +49,26 @@ class LSMTemplate():
 
         to_database: bool
             Save the simulation run in the database or not
-
-        Returns
-        -------
-        TurbulenceCalculator
-            The object himself.
         """
 
         # create the input file.
         # paramsMap['wind_dir'] = self.paramsMap['wind_dir_meteorological']
+        self._document['desc']['params'].update(kwargs)
         ifmc = InputForModelsCreator(self.dirPath) # was os.path.dirname(__file__)
         ifmc.setParamsMap(self.params)
         ifmc.setTemplate('%s_%s' % (self.modelName, self.version))
 
         if to_database:
-            doc = dict(projectName=self.modelName,
+            doc = dict(projectName=projectName,
+                       type='%s_run' % self.modelName,
                        resource='None',
                        dataFormat='None',
                        desc=dict(params=self.params,
                                  version=self.version
                                  )
                        )
-            doc = AnalysisDoc(**doc).save()
-            saveDir += '_'+str(doc.id)
+            doc = SimulationsDoc(**doc).save()
+            saveDir = os.path.join(saveDir, str(doc.id))
             if to_xarray:
                 doc['resource'] = os.path.join(saveDir, 'netcdf', '*')
                 doc['dataFormat'] = 'netcdf_xarray'
