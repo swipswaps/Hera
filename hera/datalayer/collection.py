@@ -41,9 +41,14 @@ class AbstractCollection(object):
                 params['desc__%s' % key] = value
         return self._metadataCol.objects(projectName=projectName, **params)
 
+    def getDocumentByID(self, id):
+        return self._metadataCol.__objects.get(id=id)
+
     def addDocument(self, **kwargs):
         # if self.type is not None:
         #     kwargs['type'] = self.type
+        if 'desc__type' in kwargs or 'type' in kwargs['desc']:
+            raise KeyError("'type' key can't be in the desc")
         try:
             self._metadataCol(**kwargs).save()
         except ValidationError:
