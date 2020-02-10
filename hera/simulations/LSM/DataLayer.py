@@ -1,8 +1,6 @@
 import os
 import xarray
-import json
 import numpy
-import glob
 from unum.units import *
 
 from ..utils import toUnum,toNumber
@@ -27,6 +25,15 @@ rescaleC = lambda C, data, q_units: toNumber(toUnum(C, 1 * kg) / m ** 3, q_units
 
 class SingleSimulation(object):
     _finalxarray = None
+    _document = None
+
+    @property
+    def params(self):
+        return self._document['desc']['params']
+
+    @property
+    def version(self):
+        return self._document['desc']['version']
 
     def __init__(self, resource):
         if type(resource) is str:
@@ -45,25 +52,65 @@ class SingleSimulation(object):
             # self._xray = xarray.open_mfdataset([x[0] for x in combined])
             self._finalxarray = xarray.open_mfdataset(os.path.join(resource, '*.nc'))
         else:
+            self._document = resource
             self._finalxarray = resource.getData()
             if type(self._finalxarray) is str:
-                self._finalxarray = xarray.open_mfdataset(resource.getData())
+                self._finalxarray = xarray.open_mfdataset(self._finalxarray)
 
     def getDosage(self, Q=1 * kg, time_units=min, q_units=mg):
+        """
+        Calculates the dosage
+
+        Parameters
+        ----------
+        Q : unum.units
+            Default value is 1*kg
+
+        time_units: unum.units
+            Default value is min
+
+        q_units: unum.units
+            Default value is mg
+
+        Returns
+        -------
+        self._finalxarray: xarray
+            The calculated dosage in 'Dosage' key
+        """
         dt_minutes = (self._finalxarray.datetime.diff('datetime')[0].values / numpy.timedelta64(1, 'm')) * min
 
-        self._finalxarray.attrs['dt'] = dt_minutes.asUnit(time_units)
-        self._finalxarray.attrs['Q'] = Q.asUnit(q_units)
+        self._finalxarray.attrs['dt'] = toUnum(dt_minutes, time_units)
+        self._finalxarray.attrs['Q'] = toUnum(Q, q_units)
         self._finalxarray['Dosage'] = rescaleD(Q * (min).asNumber(time_units), self._finalxarray['Dosage'], time_units,
                                                q_units)
 
-        return self._finalxarray
+        return self._finalxarray.copy()
 
     def getConcentration(self, Q=1*kg, time_units=min, q_units=mg):
+        """
+        Calculates the concentration
+
+        Parameters
+        ----------
+        Q : unum.units
+            Default value is 1*kg
+
+        time_units: unum.units
+            Default value is min
+
+        q_units: unum.units
+            Default value is mg
+
+        Returns
+        -------
+        dDosage: xarray
+            The calculated concentration in 'C' key
+        """
         if 'dt' not in self._finalxarray.attrs.keys():
             self.getDosage(Q=Q, time_units=time_units, q_units=q_units)
 
         dDosage = self._finalxarray['Dosage'].diff('datetime').to_dataset().rename({'Dosage': 'dDosage'})
         dDosage['C'] = dDosage['dDosage'] / self._finalxarray.attrs['dt'].asNumber()
+        dDosage.attrs = self._finalxarray.attrs
 
-        return dDosage
+        return dDosage.copy()

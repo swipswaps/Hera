@@ -1,9 +1,8 @@
-from .collection import AbstractCollection,GIS_Collection,Measurements_Collection,Simulation_Collection,Analysis_Collection,Project_Collection
+from .collection import AbstractCollection,Measurements_Collection,Simulations_Collection,Analysis_Collection,Projects_Collection
 
-GIS = GIS_Collection()
 Measurements = Measurements_Collection()
-Simulation = Simulation_Collection()
+Simulations = Simulations_Collection()
 Analysis = Analysis_Collection()
-Project = Project_Collection()
+Projects = Projects_Collection()
 
 All = AbstractCollection()

@@ -1,6 +1,8 @@
 import pandas
 import dask.dataframe
 import xarray
+import json
+from json import JSONDecodeError
 
 
 def getHandler(type):
@@ -12,14 +14,6 @@ class DataHandler_string(object):
     @staticmethod
     def getData(resource):
         return resource
-
-
-class DataHandler_string(object):
-
-    @staticmethod
-    def getData(resource):
-        return resource
-
 
 class DataHandler_time(object):
 
@@ -51,7 +45,7 @@ class DataHandler_dict(object):
         return df
 
 
-class DataHandler_netcdf(object):
+class DataHandler_netcdf_xarray(object):
 
     @staticmethod
     def getData(resource):
@@ -59,8 +53,20 @@ class DataHandler_netcdf(object):
 
         return df
 
+class DataHandler_JSON_dict(object):
 
-class DataHandler_JSON(object):
+    @staticmethod
+    def getData(resource):
+        try:
+            df = json.loads(resource)
+        except JSONDecodeError:
+            with open(resource, 'r') as myFile:
+                df = json.read(myFile)
+
+        return df
+
+
+class DataHandler_JSON_pandas(object):
 
     @staticmethod
     def getData(resource, usePandas=True):

@@ -1,5 +1,5 @@
-from ...datalayer import Simulation, Analysis
-from ..LSM.DataLayer import SingleSimulation
+from ...datalayer import Simulations
+from .DataLayer import SingleSimulation
 from ..templates import LSMTemplate
 import pandas
 from itertools import product
@@ -11,7 +11,7 @@ def getTemplates(**query):
     :return:
     """
 
-    docList = Simulation.getDocuments(projectName='LSM', **query)
+    docList = Simulations.getDocuments(projectName='LSM', type='LSM_template', **query)
     return [LSMTemplate(doc) for doc in docList]
 
 def listTemplates(**query):
@@ -20,7 +20,7 @@ def listTemplates(**query):
     :param query:
     :return:
     """
-    docList = Simulation.getDocuments(projectName='LSM', **query)
+    docList = Simulations.getDocuments(projectName='LSM', type='LSM_template', **query)
     descList = [doc.desc.copy() for doc in docList]
     for (i, desc) in enumerate(descList):
         desc.update({'id':docList[i].id})
@@ -39,23 +39,23 @@ def listTemplates(**query):
     except ValueError:
         raise FileNotFoundError('No templates found')
 
-def getSimulations(**query):
+def getSimulations(projectName, **query):
     """
     get a list of SingleSimulation objects that fulfill the query
     :param query:
     :return:
     """
 
-    docList = Analysis.getDocuments(projectName='LSM', **query)
+    docList = Simulations.getDocuments(projectName=projectName, type='LSM_run', **query)
     return [SingleSimulation(doc) for doc in docList]
 
-def listSimulations(**query):
+def listSimulations(projectName, **query):
     """
     list the Simulation parameters that fulfil the query
     :param query:
     :return:
     """
-    docList = Analysis.getDocuments(projectName='LSM', **query)
+    docList = Simulations.getDocuments(projectName=projectName, type='LSM_run', **query)
     descList = [doc.desc.copy() for doc in docList]
     for (i, desc) in enumerate(descList):
         desc.update({'id':docList[i].id})

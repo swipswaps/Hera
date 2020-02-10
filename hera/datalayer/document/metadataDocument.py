@@ -21,7 +21,7 @@ class Metadata(DynamicDocument):
 # ---------------- Data Documents ------------------------
 
 class Record(Metadata):
-    # type = StringField(required=True)
+    type = StringField(required=True)
     resource = DynamicField(required=True)
     dataFormat = StringField(required=True)
     meta = {'allow_inheritance': True}
@@ -29,13 +29,10 @@ class Record(Metadata):
     def getData(self, **kwargs):
             return getHandler(self.dataFormat).getData(self.resource, **kwargs)
 
-class GIS(Record):
-    pass
-
 class Measurements(Record):
     pass
 
-class Simulation(Record):
+class Simulations(Record):
     pass
 
 class Analysis(Record):
@@ -43,7 +40,7 @@ class Analysis(Record):
 
 # ---------------- Project Documents ---------------------
 
-class Project(Metadata):
+class Projects(Metadata):
 
     @property
     def info(self):

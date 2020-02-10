@@ -9,12 +9,16 @@ from unum.units import *
 def toNetcdf(basefiles,addzero=True):
     """
         Converts the data to netcdf.
-
         The dosage are converted to s/m**3 instead of min/m**3.
 
-    :param basefiles:
-    :param addZero: if true, adds a 0 file at the begining of the files (with time shift 0). 
-    :return:
+        Parameters
+        ----------
+        basefiles: str
+            Path to the directory with the netcdf files
+
+        addZero: bool
+            if true, adds a 0 file at the begining of the files (with time shift 0)
+
     """
 
     #outfilename = name
