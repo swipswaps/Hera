@@ -26,13 +26,13 @@ class LSMTemplate():
 
     @property
     def modelName(self):
-        return self._document['type']
+        return self._document['type'].split('_')[0]
 
     @property
     def modelFolder(self):
         return self._document['desc']['modelFolder']
 
-    def run(self, projectName, saveDir, to_xarray=False, to_database=False, **kwargs):
+    def run(self, saveDir, projectName='LSM', to_xarray=False, to_database=False, **kwargs):
         """
         Execute the LSM simulation
 
