@@ -42,7 +42,7 @@ class AbstractCollection(object):
         return self._metadataCol.objects(projectName=projectName, **params)
 
     def getDocumentByID(self, id):
-        return self._metadataCol.__objects.get(id=id)
+        return self._metadataCol.objects.get(id=id)
 
     def addDocument(self, **kwargs):
         # if self.type is not None:

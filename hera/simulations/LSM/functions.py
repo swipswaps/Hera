@@ -4,23 +4,32 @@ from ..templates import LSMTemplate
 import pandas
 from itertools import product
 
-def getTemplates(**query):
+def getTemplates(projectName, **query):
     """
     get a list of Template objects that fulfill the query
     :param query:
     :return:
     """
 
-    docList = Simulations.getDocuments(projectName='LSM', type='LSM_template', **query)
+    docList = Simulations.getDocuments(projectName=projectName, type='LSM_template', **query)
     return [LSMTemplate(doc) for doc in docList]
 
-def listTemplates(**query):
+def getTemplateByID(id):
+    """
+    get a teamplate by document id
+
+    :param id:
+    :return:
+    """
+    return LSMTemplate(Simulations.getDocumentByID(id))
+
+def listTemplates(projectName, wideFormat=False, **query):
     """
     list the template parameters that fulfil the query
     :param query:
     :return:
     """
-    docList = Simulations.getDocuments(projectName='LSM', type='LSM_template', **query)
+    docList = Simulations.getDocuments(projectName=projectName, type='LSM_template', **query)
     descList = [doc.desc.copy() for doc in docList]
     for (i, desc) in enumerate(descList):
         desc.update({'id':docList[i].id})
@@ -35,7 +44,11 @@ def listTemplates(**query):
         new_df.index = [id]*len(new_df)
         new_df_list.append(new_df)
     try:
-        return pandas.concat(new_df_list)
+        df = pandas.concat(new_df_list)
+        if wideFormat:
+            return df.pivot(columns='variable', values='value')
+        else:
+            return df
     except ValueError:
         raise FileNotFoundError('No templates found')
 
@@ -49,7 +62,16 @@ def getSimulations(projectName, **query):
     docList = Simulations.getDocuments(projectName=projectName, type='LSM_run', **query)
     return [SingleSimulation(doc) for doc in docList]
 
-def listSimulations(projectName, **query):
+def getSimulationByID(id):
+    """
+    get a simulation by document id
+
+    :param id:
+    :return:
+    """
+    return SingleSimulation(Simulations.getDocumentByID(id))
+
+def listSimulations(projectName, wideFormat=False, **query):
     """
     list the Simulation parameters that fulfil the query
     :param query:
@@ -70,6 +92,10 @@ def listSimulations(projectName, **query):
         new_df.index = [id]*len(new_df)
         new_df_list.append(new_df)
     try:
-        return pandas.concat(new_df_list)
+        df = pandas.concat(new_df_list)
+        if wideFormat:
+            return df.pivot(columns='variable', values='value')
+        else:
+            return df
     except ValueError:
         raise FileNotFoundError('No simulations found')
