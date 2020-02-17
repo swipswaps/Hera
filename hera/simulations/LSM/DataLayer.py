@@ -5,10 +5,6 @@ from unum.units import *
 
 from ..utils import toUnum,toNumber
 
-rescaleD = lambda D, data, time_units, q_units: toNumber(toUnum(D, 1 * kg) * min / m ** 3,
-                                                         q_units * time_units / m ** 3) * data
-rescaleC = lambda C, data, q_units: toNumber(toUnum(C, 1 * kg) / m ** 3, q_units / m ** 3) * data
-
 # def toVTK(self, data, outputdir, name, fields):
 #     from pyevtk.hl import gridToVTK
 #
@@ -80,9 +76,12 @@ class SingleSimulation(object):
         dt_minutes = (self._finalxarray.datetime.diff('datetime')[0].values / numpy.timedelta64(1, 'm')) * min
 
         self._finalxarray.attrs['dt'] = toUnum(dt_minutes, time_units)
-        self._finalxarray.attrs['Q'] = toUnum(Q, q_units)
-        self._finalxarray['Dosage'] = rescaleD(Q * (min).asNumber(time_units), self._finalxarray['Dosage'], time_units,
-                                               q_units)
+        self._finalxarray.attrs['Q']  = toUnum(Q, q_units)
+
+        Qfactor = toNumber(self._finalxarray.attrs['Q'] * min / m ** 3,
+                           q_units * time_units / m ** 3)
+
+        self._finalxarray['Dosage']   = Qfactor*self._finalxarray['Dosage']
 
         return self._finalxarray.copy()
 
