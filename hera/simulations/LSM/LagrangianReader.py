@@ -54,12 +54,12 @@ def toNetcdf(basefiles,addzero=True):
       
            finalxarray = xarray.DataArray(numpy.zeros(xray['Dosage'].values.shape), \
                                        coords={'x': xray.x, 'y': xray.y, 'z': xray.z, 'datetime': zdatetime},
-                                       dims=['datetime', 'x', 'y', 'z']).to_dataset(name='Dosage')
+                                       dims=['datetime', 'y', 'x', 'z']).to_dataset(name='Dosage')
 
            yield finalxarray
            #finalxarray.to_netcdf(os.path.join(topath,name,"%s_0_0.nc" % outfilename) )
 
         finalxarray = xarray.DataArray(xray['Dosage'].values, \
                                        coords={'x': xray.x, 'y': xray.y, 'z': xray.z, 'datetime': datetime},
-                                       dims=['datetime', 'x', 'y', 'z']).to_dataset(name='Dosage')
+                                       dims=['datetime', 'y', 'x', 'z']).to_dataset(name='Dosage')
         yield finalxarray
