@@ -77,12 +77,13 @@ class SingleSimulation(object):
         self._finalxarray: xarray
             The calculated dosage in 'Dosage' key
         """
-        dt_minutes = (self._finalxarray.datetime.diff('datetime')[0].values / numpy.timedelta64(1, 'm')) * min
+        if 'dt' not in self._finalxarray.attrs.keys():
+            dt_minutes = (self._finalxarray.datetime.diff('datetime')[0].values / numpy.timedelta64(1, 'm')) * min
 
-        self._finalxarray.attrs['dt'] = toUnum(dt_minutes, time_units)
-        self._finalxarray.attrs['Q'] = toUnum(Q, q_units)
-        self._finalxarray['Dosage'] = rescaleD(Q * (min).asNumber(time_units), self._finalxarray['Dosage'], time_units,
-                                               q_units)
+            self._finalxarray.attrs['dt'] = toUnum(dt_minutes, time_units)
+            self._finalxarray.attrs['Q'] = toUnum(Q, q_units)
+            self._finalxarray['Dosage'] = rescaleD(Q * (min).asNumber(time_units), self._finalxarray['Dosage'], time_units,
+                                                   q_units)
 
         return self._finalxarray.copy()
 
