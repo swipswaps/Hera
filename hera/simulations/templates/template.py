@@ -89,7 +89,7 @@ class LSMTemplate():
         os.system('./a.out')
 
         if to_xarray:
-            results_full_path = os.path.join(saveDir, "tozaot", "machsan", "OUTD2d")
+            results_full_path = os.path.join(saveDir, "tozaot", "machsan", "OUTD2d03_3_")
             netcdf_output = os.path.join(saveDir, "netcdf")
             os.makedirs(netcdf_output, exist_ok=True)
 
