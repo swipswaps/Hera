@@ -49,7 +49,7 @@ class DataHandler_netcdf_xarray(object):
 
     @staticmethod
     def getData(resource):
-        df = xarray.open_mfdataset(resource)
+        df = xarray.open_mfdataset(resource, combine='by_coords')
 
         return df
 
