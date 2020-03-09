@@ -10,9 +10,10 @@ Welcome to pyhera's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   datalayer/architecture
-   meteorological/architecture
-   examples
+   datalayer
+   measurements
+   simulations
+   instructions_for_dev
 
 
 Indices and tables
