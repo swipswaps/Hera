@@ -133,7 +133,7 @@ class QueryResult(object):
 
     def getData(self, **kwargs):
         dataList = [doc.getData(**kwargs) for doc in self._docList]
-        if len(dataList)==0:
+        if len(dataList)!=0:
             if 'usePandas' in kwargs:
                 if kwargs['usePandas']:
                     return pandas.concat(dataList)
