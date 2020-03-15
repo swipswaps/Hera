@@ -1,5 +1,5 @@
 import pandas
-
+import dask.dataframe
 from ..analytics.turbulencecalculator import TurbulenceCalculator
 from .... import datalayer
 
@@ -30,7 +30,13 @@ def getTurbulenceCalculatorFromDB(projectName, samplingWindow, start=None, end=N
         start = projectData['start']
         end = projectData['end']
 
-    rawData = datalayer.Measurements.getData(projectName = projectName, usePandas = usePandas, start__lte=end, end__gte=start, **kwargs)[start:end]
+    dataList = datalayer.Measurements.getData(projectName = projectName, usePandas = usePandas, start__lte=end, end__gte=start, **kwargs)
+    if usePandas:
+        rawData = pandas.concat(dataList)
+    else:
+        rawData = dask.dataframe.concat(dataList)
+
+    rawData = rawData[start:end]
 
     identifier = {'projectName': projectName,
                   'samplingWindow': samplingWindow,

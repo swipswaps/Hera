@@ -132,16 +132,7 @@ class QueryResult(object):
         self._docList = docList
 
     def getData(self, **kwargs):
-        dataList = [doc.getData(**kwargs) for doc in self._docList]
-        if len(dataList)!=0:
-            if 'usePandas' in kwargs:
-                if kwargs['usePandas']:
-                    return pandas.concat(dataList)
-                else:
-                    return dask.dataframe.concat(dataList)
-        else:
-            raise FileNotFoundError('There is no data for those parameters')
-        return dataList[0]
+        return [doc.getData(**kwargs) for doc in self._docList]
 
     def projectName(self):
         namesList = [doc.projectName for doc in self._docList]
