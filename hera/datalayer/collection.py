@@ -86,6 +86,9 @@ class Measurements_Collection(Record_Collection):
     def __init__(self):
         super().__init__(ctype='Measurements')
 
+    def meta(self):
+        return self._metadataCol
+
 
 class Simulations_Collection(Record_Collection):
 

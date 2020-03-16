@@ -6,7 +6,6 @@ There are 4 different ....
 
 * Measurements
 * Simulation
-* GIS
 * Analysis
 
 

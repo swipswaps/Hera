@@ -24,7 +24,9 @@ class Record(Metadata):
     type = StringField(required=True)
     resource = DynamicField(required=True)
     dataFormat = StringField(required=True)
-    meta = {'allow_inheritance': True}
+    meta = {'allow_inheritance': True,
+            'auto_create_index': True,
+            'indexes': [('geometry','2dsphere')]}
 
     def getData(self, **kwargs):
             return getHandler(self.dataFormat).getData(self.resource, **kwargs)
@@ -37,6 +39,8 @@ class Simulations(Record):
 
 class Analysis(Record):
     pass
+
+
 
 # ---------------- Project Documents ---------------------
 
