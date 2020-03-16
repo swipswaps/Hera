@@ -86,6 +86,9 @@ class Measurements_Collection(Record_Collection):
     def __init__(self):
         super().__init__(ctype='Measurements')
 
+    def meta(self):
+        return self._metadataCol
+
 
 class Simulations_Collection(Record_Collection):
 
@@ -133,7 +136,7 @@ class QueryResult(object):
 
     def getData(self, **kwargs):
         dataList = [doc.getData(**kwargs) for doc in self._docList]
-        if len(dataList)==0:
+        if len(dataList)!=0:
             if 'usePandas' in kwargs:
                 if kwargs['usePandas']:
                     return pandas.concat(dataList)
