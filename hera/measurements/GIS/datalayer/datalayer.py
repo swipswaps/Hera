@@ -81,14 +81,20 @@ class GIS_datalayer():
 
     def getGeometry(self, name):
 
-        document = self._Measurments.getDocuments(projectName=self._projectName, name=name)
-        geo = document[0].asDict()["desc"]["geometry"]
-        geometry_type = document[0].asDict()["desc"]["geometry_type"]
+        geo, geometry_type = self.getGeometryPoints(name)
         if geometry_type == "Polygon":
             geo = geometry.Polygon(geo)
         elif geometry_type == "Point":
-            geo = geometry.Point(geo)
+            geo = geometry.Point(geo[0])
         return geo
+
+    def getGeometryPoints(self, name):
+
+        document = self._Measurments.getDocuments(projectName=self._projectName, name=name)
+        geo = document[0].asDict()["desc"]["geometry"]
+        geometry_type = document[0].asDict()["desc"]["geometry_type"]
+
+        return geo, geometry_type
 
     def addGeometry(self, geometry, name, geometry_type):
 

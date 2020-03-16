@@ -24,7 +24,6 @@ class Record(Metadata):
     type = StringField(required=True)
     resource = DynamicField(required=True)
     dataFormat = StringField(required=True)
-    geometry = PointField(required=False, auto_index=False)
     meta = {'allow_inheritance': True,
             'auto_create_index': True,
             'indexes': [('geometry','2dsphere')]}
