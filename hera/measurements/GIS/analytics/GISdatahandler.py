@@ -14,7 +14,21 @@ class GIS_datahandler():
         self._datalayer = GIS_datalayer(self._projectName, self._FilesDirectory)
 
     def getGISData(self, points=None, CutName=None, mode="Contour", GeometryMode="contains", Geometry=None, **kwargs):
+        """
+        This function is used to load GIS data.
+        One may use it to get all data that corresponds to any parameters listed in a document,
+        or to add a new document that relates to a file that holds GIS data in an area defined by a rectangle.
+        Can also be used to perform geometrical queries.
 
+        parameters:
+            points: optional, for adding new data. Holds the ITM coordinates of a rectangle. It is a list, from the structure [minimum x, minimum y, maximum x, maximum y]\n
+            CutName: optional, for adding new data. Used as part of a new file's name. (string)\n
+            mode: The data type of the desired data. Recieves "Contour", "Buildings" or "Roads".\n
+            GeometryMode: The mode of a geomtrical queries. Recieves "contains" or "intersects".\n
+            Geometry: A shapely geometry or a string with the name of a saved shapely geometry. Used to perform geometrical queries.\n
+            **kwargs: any additional parameters that describe the data.
+            return: The data.
+        """
         if Geometry is not None:
             if type(Geometry)==str:
                 try:
@@ -62,6 +76,15 @@ class GIS_datahandler():
         return data
 
     def addGeometry(self, Geometry, name):
+        """
+        This function is used to add a new geometry shape to the database.
+
+        Parameters:
+            Geometry: The geometry shape to add to the database. Geometry must be given as one of the following structurs.\n
+                      Shapely polygon or point, point coordinates ([x,y]), list of point coordinates ([[x1,y1],[x2,y2],...]),\n
+                      list of x coordinates and y coordinates ([[x1,x2,...],[y1,y2,...]]) \n
+            name: The name of the shape. (string)
+        """
 
         check = self._datalayer.check_data(name=name)
         KeyErrorText = "Geometry must be given as one of the following structurs.\n" \
@@ -104,14 +127,38 @@ class GIS_datahandler():
             self._datalayer.addGeometry(geometry=geopoints, name=name, geometry_type=geometry_type)
 
     def getGeometry(self, name):
+        """
+        Loads an existing geometry shape.
+
+        Parameters:
+            name: The name of the shape. (string) \n
+            return: The shape as a shapely.geometry object.
+        """
 
         return self._datalayer.getGeometry(name)
 
     def getGeometryPoints(self, name):
+        """
+        Loads an existing geometry shape coordinates and type.
+
+        Parameters:
+            name: The name of the shape. (string) \n
+            return: A list with two values. The first is a list of coordinates. The second is the kind of shape, "Polygon" or "Point".
+        """
 
         return self._datalayer.getGeometryPoints(name)
 
     def plotGeometry(self, names, color="black", marker="*", ax=None):
+        """
+        Plots saved geometry shapes.
+
+        Parameters:
+            names: The name/s of the shape/s (string or list of strings) \n
+            color: The color of the shape (string) n\
+            marker: The marker type for points. (string) \n
+            ax: The ax of the plot. \n
+            return: ax
+        """
 
         if ax is None:
             fig, ax = plt.subplots(1,1)
