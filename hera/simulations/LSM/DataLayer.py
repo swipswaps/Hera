@@ -46,12 +46,12 @@ class SingleSimulation(object):
             # combined = sorted([x for x in zip(filenameList, times)], key=lambda x: x[1])
             #
             # self._xray = xarray.open_mfdataset([x[0] for x in combined])
-            self._finalxarray = xarray.open_mfdataset(os.path.join(resource, '*.nc'))
+            self._finalxarray = xarray.open_mfdataset(os.path.join(resource, '*.nc'), combine='by_coords')
         else:
             self._document = resource
             self._finalxarray = resource.getData()
             if type(self._finalxarray) is str:
-                self._finalxarray = xarray.open_mfdataset(self._finalxarray)
+                self._finalxarray = xarray.open_mfdataset(self._finalxarray, combine='by_coords')
 
     def getDosage(self, Q=1 * kg, time_units=min, q_units=mg):
         """
@@ -113,3 +113,25 @@ class SingleSimulation(object):
         dDosage.attrs = self._finalxarray.attrs
 
         return dDosage.copy()
+
+    def getConcentrationAtPoint(self, x, y, datetime, Q=1*kg, time_units=min, q_units=mg):
+        """
+        Calculates the concentration at requested point and time
+
+        Parameters
+        ----------
+        x: int
+            latitude of the point
+
+        y: int
+            longitude of the point
+
+        datetime: datetime
+            time of the calculation
+
+        Returns
+        -------
+        con: float
+            The concentration at the requested point and time
+        """
+        return self.getConcentration(Q=Q, time_units=time_units, q_units=q_units)['C'].interp(x=x, y=y, datetime=datetime).values[0]

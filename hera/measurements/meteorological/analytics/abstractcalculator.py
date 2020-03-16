@@ -182,7 +182,7 @@ class SaveDataHandler(object):
                     )
 
     @staticmethod
-    def getSaveData_JSON(data, path=None):
+    def getSaveData_JSON_pandas(data, path=None):
         if path is None:
             return data.to_json()
         else:
