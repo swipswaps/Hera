@@ -5,3 +5,4 @@ datalayer examples
     :maxdepth: 2
 
     examples/getData
+    examples/addData

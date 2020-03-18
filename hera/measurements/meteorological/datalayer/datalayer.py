@@ -1,10 +1,10 @@
 import pandas
-
+import dask.dataframe
 from ..analytics.turbulencecalculator import TurbulenceCalculator
 from .... import datalayer
 
 
-def getTurbulenceCalculator(projectName, samplingWindow, start=None, end=None, usePandas=None, isMissingData=False, **kwargs):
+def getTurbulenceCalculatorFromDB(projectName, samplingWindow, start=None, end=None, usePandas=False, isMissingData=False, **kwargs):
     """
     This method loads the raw data that corresponds to the requirements (projectName, station, instrument.. ) and
     creates a turbulence calculator with the desirable sampling window.
@@ -30,7 +30,13 @@ def getTurbulenceCalculator(projectName, samplingWindow, start=None, end=None, u
         start = projectData['start']
         end = projectData['end']
 
-    rawData = datalayer.Measurements.getData(projectName = projectName, usePandas = usePandas, start__lte=end, end__gte=start, **kwargs)[start:end]
+    dataList = datalayer.Measurements.getData(projectName = projectName, usePandas = usePandas, start__lte=end, end__gte=start, **kwargs)
+    if usePandas:
+        rawData = pandas.concat(dataList)
+    else:
+        rawData = dask.dataframe.concat(dataList)
+
+    rawData = rawData[start:end]
 
     identifier = {'projectName': projectName,
                   'samplingWindow': samplingWindow,
@@ -48,3 +54,29 @@ def getTurbulenceCalculator(projectName, samplingWindow, start=None, end=None, u
         identifier['averagedHeight'] = stationData.get('averagedHeight', None)
 
     return TurbulenceCalculator(rawData = rawData, metadata=projectData, identifier=identifier, isMissingData=isMissingData)
+
+
+def getTurbulenceCalculatorFromData(data, samplingWindow, usePandas=None, isMissingData=False):
+    """
+    This method gets turbulence calculator
+
+    :param data:           The raw data for the calculations.
+    :param samplingWindow: The sampling window.
+    :param usePandas:      A flag of whether or not use pandas.
+    :param isMissingData:  A flag if there is a missing data to compute accordingly.
+
+    :return: A turbulence calculator of the loaded raw data.
+    """
+    identifier = {'samplingWindow': samplingWindow,
+                  }
+
+    return TurbulenceCalculator(rawData=data, metadata={}, identifier=identifier)
+
+
+def getTurbulenceCalculator(data=None, projectName=None, **kwargs):
+    if data is not None:
+        return getTurbulenceCalculatorFromData(data=data, **kwargs)
+    elif projectName is not None:
+        return getTurbulenceCalculatorFromDB(projectName=projectName, **kwargs)
+    else:
+        raise ValueError("'data' argument or 'projectName' argument must be delivered")

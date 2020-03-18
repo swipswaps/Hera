@@ -3,7 +3,7 @@ import dask.dataframe
 import xarray
 import json
 from json import JSONDecodeError
-
+import geopandas
 
 def getHandler(type):
     return globals()['DataHandler_%s' % type]
@@ -20,7 +20,6 @@ class DataHandler_time(object):
     @staticmethod
     def getData(resource):
         return pandas.Timestamp(resource)
-
 
 class DataHandler_HDF(object):
 
@@ -49,7 +48,7 @@ class DataHandler_netcdf_xarray(object):
 
     @staticmethod
     def getData(resource):
-        df = xarray.open_mfdataset(resource)
+        df = xarray.open_mfdataset(resource, combine='by_coords')
 
         return df
 
@@ -77,6 +76,12 @@ class DataHandler_JSON_pandas(object):
 
         return df
 
+class DataHandler_geopandas(object):
+    @staticmethod
+    def getData(resource):
+        df = geopandas.read_file(resource)
+
+        return df
 
 class DataHandler_parquet(object):
 

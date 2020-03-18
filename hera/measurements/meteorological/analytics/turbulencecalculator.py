@@ -181,6 +181,8 @@ class TurbulenceCalculator(AbstractCalculator):
             self._InMemoryAvgRef = inMemory
 
         if 'wind_speed' not in self._RawData.columns:
+            self.fluctuations()
+
             self._RawData = self._RawData.assign(wind_speed=lambda x: numpy.hypot(x['u'], x['v']))
 
             resampled = self._RawData['wind_speed']
@@ -214,22 +216,39 @@ class TurbulenceCalculator(AbstractCalculator):
             self._InMemoryAvgRef = inMemory
 
         if 'wind_dir_mathematical' not in self._RawData.columns:
+            self.fluctuations()
+
             self._RawData = self._RawData.assign(wind_dir_mathematical=lambda x: numpy.arctan2(x['v'], x['u']))
             resampled = self._RawData['wind_dir_mathematical']
             resampled = resampled if self.SamplingWindow is None else resampled.resample(self.SamplingWindow)
 
-            avg = resampled.apply(lambda x: circmean(x, high=numpy.pi, low=-numpy.pi))
+            if self._DataType=='pandas':
+                avg = resampled.apply(lambda x: circmean(x, high=numpy.pi, low=-numpy.pi))
+            else:
+                avg = resampled.agg(lambda x: circmean(x, high=numpy.pi, low=-numpy.pi))
+
             self._TemporaryData['wind_dir_mathematical'] = avg
             self._CalculatedParams.append(['wind_dir_mathematical',{}])
-            avg = numpy.rad2deg(avg+numpy.pi)
-            self._TemporaryData['wind_dir_meteorological'] = [int(270-x) if 270-x>=0 else int(630-x) for x in avg.values]
+
+            if self._DataType == 'pandas':
+                avg = numpy.rad2deg(avg + numpy.pi)
+                self._TemporaryData['wind_dir_meteorological'] = [int(270 - x) if 270 - x >= 0 else int(630 - x) for x in avg.values]
+            else:
+                self._TemporaryData['wind_dir_meteorological'] = self._TemporaryData['wind_dir_mathematical'].apply(
+                    lambda x: numpy.rad2deg(x + numpy.pi), meta=('wind_dir_mathematical', 'float64'))
+                self._TemporaryData['wind_dir_meteorological'] = self._TemporaryData['wind_dir_meteorological'].apply(
+                    lambda x: int(270 - x) if 270 - x >= 0 else int(630 - x), meta=('wind_dir_meteorological', 'int64'))
+
             self._CalculatedParams.append(['wind_dir_meteorological',{}])
 
-            std = resampled.apply(lambda x: circstd(x, high=numpy.pi, low=-numpy.pi)).rename(columns={'wind_dir_mathematical': 'wind_dir_mathematical_std'})
+            if self._DataType == 'pandas':
+                std = resampled.apply(lambda x: circstd(x, high=numpy.pi, low=-numpy.pi))
+            else:
+                std = resampled.agg(lambda x: circstd(x, high=numpy.pi, low=-numpy.pi))
             self._TemporaryData['wind_dir_mathematical_std'] = std
             self._CalculatedParams.append(['wind_dir_mathematical_std',{}])
-            std = numpy.rad2deg(std+numpy.pi)
-            self._TemporaryData['wind_dir_meteorological_std'] = [int(270-x) if 270-x>=0 else int(630-x) for x in std.values]
+            std = numpy.rad2deg(std) #numpy.rad2deg(std+numpy.pi)
+            self._TemporaryData['wind_dir_meteorological_std'] = std #[int(270-x) if 270-x>=0 else int(630-x) for x in std.values]
             self._CalculatedParams.append(['wind_dir_meteorological_std',{}])
 
         return self
