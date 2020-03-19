@@ -1,8 +1,6 @@
-import dask.dataframe
-from .document.metadataDocument import Metadata,Measurements,Simulations,Analysis,Projects
+# from .document.metadataDocument import Metadata,Measurements,Simulations,Analysis,Projects
+from . import getDBObject
 from mongoengine import ValidationError, MultipleObjectsReturned, DoesNotExist
-import pandas
-import json
 
 class AbstractCollection(object):
     _metadataCol = None
@@ -12,9 +10,9 @@ class AbstractCollection(object):
     def type(self):
         return self._type
 
-    def __init__(self, ctype=None):
+    def __init__(self, ctype=None, user=None):
         self._type = ctype
-        self._metadataCol = Metadata if self.type is None else globals()['%s' % self.type]
+        self._metadataCol = getDBObject('Metadata', user) if self.type is None else getDBObject(ctype, user)
 
     def getDocumentsAsDict(self, projectName, **kwargs):
         dictList = QueryResult(self.getDocuments(projectName=projectName, **kwargs)).asDict()
@@ -62,8 +60,8 @@ class AbstractCollection(object):
 
 
 class Record_Collection(AbstractCollection):
-    def __init__(self, ctype=None):
-        super().__init__(ctype)
+    def __init__(self, ctype='Record', user=None):
+        super().__init__(ctype, user=user)
 
     def getData(self, projectName, usePandas=None, **kwargs):
         """
@@ -83,8 +81,8 @@ class Record_Collection(AbstractCollection):
 
 class Measurements_Collection(Record_Collection):
 
-    def __init__(self):
-        super().__init__(ctype='Measurements')
+    def __init__(self, user=None):
+        super().__init__(ctype='Measurements', user=user)
 
     def meta(self):
         return self._metadataCol
@@ -92,19 +90,19 @@ class Measurements_Collection(Record_Collection):
 
 class Simulations_Collection(Record_Collection):
 
-    def __init__(self):
-        super().__init__(ctype='Simulations')
+    def __init__(self, user=None):
+        super().__init__(ctype='Simulations', user=user)
 
 
 class Analysis_Collection(Record_Collection):
 
-    def __init__(self):
-        super().__init__(ctype='Analysis')
+    def __init__(self, user=None):
+        super().__init__(ctype='Analysis', user=user)
 
 
 class Projects_Collection(AbstractCollection):
-    def __init__(self):
-        super().__init__(ctype='Projects')
+    def __init__(self, user=None):
+        super().__init__(ctype='Projects', user=user)
 
     def namesList(self):
         """

@@ -1,16 +1,14 @@
 from mongoengine import *
 import json
-from ..document import connectToDatabase
-import pydoc
 from ..datahandler import getHandler
 
-mongoConfig = connectToDatabase()
+# mongoConfig = connectToDatabase()
 
-class Metadata(DynamicDocument):
+class MetadataFrame(object):
     projectName = StringField(required=True)
     desc = DictField(required=True)
-    meta = {'db_alias': '%s-alias' % mongoConfig['dbName'],
-            'allow_inheritance': True}
+    # meta = {'db_alias': '%s-alias' % mongoConfig['dbName'],
+    #         'allow_inheritance': True}
 
     def asDict(self):
         docDict = json.loads(self.to_json())
@@ -20,31 +18,31 @@ class Metadata(DynamicDocument):
 
 # ---------------- Data Documents ------------------------
 
-class Record(Metadata):
+class RecordFrame(object):
     type = StringField(required=True)
     resource = DynamicField(required=True)
     dataFormat = StringField(required=True)
-    meta = {'allow_inheritance': True,
-            'auto_create_index': True,
-            'indexes': [('geometry','2dsphere')]}
+    # meta = {'allow_inheritance': True,
+    #         'auto_create_index': True,
+    #         'indexes': [('geometry','2dsphere')]}
 
     def getData(self, **kwargs):
             return getHandler(self.dataFormat).getData(self.resource, **kwargs)
 
-class Measurements(Record):
+class MeasurementsFrame(object):
     pass
 
-class Simulations(Record):
+class SimulationsFrame(object):
     pass
 
-class Analysis(Record):
+class AnalysisFrame(object):
     pass
 
 
 
 # ---------------- Project Documents ---------------------
 
-class Projects(Metadata):
+class ProjectsFrame(object):
 
     @property
     def info(self):

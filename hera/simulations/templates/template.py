@@ -1,5 +1,6 @@
 import os
-from ...datalayer.document.metadataDocument import Simulations as SimulationsDoc
+# from ...datalayer.document.metadataDocument import Simulations as SimulationsDoc
+from ...datalayer.document import getDBObject
 from ..LSM import LagrangianReader
 from .inputForModelsCreation import InputForModelsCreator
 import xarray
@@ -59,6 +60,7 @@ class LSMTemplate():
         ifmc.setTemplate('%s_%s' % (self.modelName, self.version))
 
         if to_database:
+            SimulationsDoc = getDBObject('Simulations')
             doc = dict(projectName=projectName,
                        type='%s_run' % self.modelName,
                        resource='None',
