@@ -45,6 +45,18 @@ class AbstractCollection(object):
         return self._metadataCol.objects.get(id=id)
 
     def addDocument(self, **kwargs):
+        """
+            Adds a record to the mongodb.
+
+            The record must have a type field that will
+            define the type of the record.
+
+            A type can be
+                - type:
+
+        :param kwargs:
+        :return:
+        """
         # if self.type is not None:
         #     kwargs['type'] = self.type
         if 'desc__type' in kwargs or 'type' in kwargs['desc']:

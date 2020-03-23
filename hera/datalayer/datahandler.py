@@ -10,21 +10,59 @@ def getHandler(type):
 
 
 class DataHandler_string(object):
+    """
+        The resource is a string.
+    """
 
     @staticmethod
     def getData(resource):
+        """
+            The data in the record is a string.
+
+        :param resource: the resource of the record
+        :return:
+            string
+        """
         return resource
 
 class DataHandler_time(object):
+    """
+        The resource is a timestamp.
+    """
 
     @staticmethod
     def getData(resource):
+        """
+            The data in the record is a timestamp.
+
+
+        :param resource: boolean the resource of the record
+        :return:
+            pandas.Timestamp
+        """
         return pandas.Timestamp(resource)
 
 class DataHandler_HDF(object):
+    """
+        Loads a single key from HDF file or files.
+
+        Returns a pandas or a dask dataframe.
+
+        The structure of the resource is a dictionary with the keys:
+         -  path: the path to the HDF file (can be a pattern to represent a list of files).
+         -  key : a single key.
+    """
 
     @staticmethod
     def getData(resource, usePandas=False):
+        """
+            Loads a key from a HDF file or files.
+
+        :param resource: The directory of the parquet file.
+        :param usePandas: if True, compute the dask.
+        :return:
+                dask dataframe or pandas.dataframe (if usePandas is true).
+        """
         df = dask.dataframe.read_hdf(resource['path'], resource['key'], sorted_index=True)
 
         if usePandas:
@@ -87,6 +125,14 @@ class DataHandler_parquet(object):
 
     @staticmethod
     def getData(resource, usePandas=False):
+        """
+            Loads a parquet file using the resource.
+
+        :param resource: The directory of the parquet file.
+        :param usePandas: if True, compute the dask.
+        :return:
+                dask dataframe or pandas.dataframe (if usePandas is true).
+        """
         df = dask.dataframe.read_parquet(resource)
 
         if usePandas:
