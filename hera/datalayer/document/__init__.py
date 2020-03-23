@@ -2,7 +2,7 @@ from mongoengine import *
 import os
 import json
 import getpass
-from .metadataDocument import MetadataFrame, RecordFrame, MeasurementsFrame, AnalysisFrame, SimulationsFrame, ProjectsFrame
+from .metadataDocument import MetadataFrame
 
 dbObjects = {}
 
@@ -79,31 +79,22 @@ def createDBConnection(user, mongoConfig):
     dbName = mongoConfig['dbName']
 
     new_Metadata = type('Metadata', (DynamicDocument, MetadataFrame), {'meta': {'db_alias': '%s-alias' % dbName,
-                                                                                'allow_inheritance': True
+                                                                                'allow_inheritance': True,
+                                                                                'auto_create_indexes': True,
+                                                                                'indexes': [('geometery', '2dsphere')]
                                                                                 }
                                                                        }
                         )
     dbDict['Metadata'] = new_Metadata
 
-    new_Record = type('Record', (RecordFrame, new_Metadata), {'meta': {'db_alias': '%s-alias'% dbName,
-                                                                       'allow_inheritance': True,
-                                                                       'auto_create_indexes': True,
-                                                                       'indexes': [('geometery', '2dsphere')]}
-                                                              }
-                      )
-    dbDict['Record'] = new_Record
-
-    new_Measurements = type('Measurements', (MeasurementsFrame, new_Record), {})
+    new_Measurements = type('Measurements', (new_Metadata,), {})
     dbDict['Measurements'] = new_Measurements
 
-    new_Analysis = type('Analysis', (AnalysisFrame, new_Record), {})
+    new_Analysis = type('Analysis', (new_Metadata,), {})
     dbDict['Analysis'] = new_Analysis
 
-    new_Simulations = type('Simulations', (SimulationsFrame, new_Record), {})
+    new_Simulations = type('Simulations', (new_Metadata,), {})
     dbDict['Simulations'] = new_Simulations
-
-    new_Projects = type('Projects', (ProjectsFrame ,new_Metadata), {})
-    dbDict['Projects'] = new_Projects
 
     dbObjects[user] = dbDict
 
