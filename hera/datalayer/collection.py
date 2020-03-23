@@ -1,8 +1,6 @@
-import dask.dataframe
-from .document.metadataDocument import Metadata,Measurements,Simulations,Analysis,Projects
+# from .document.metadataDocument import Metadata,Measurements,Simulations,Analysis,Projects
+from . import getDBObject
 from mongoengine import ValidationError, MultipleObjectsReturned, DoesNotExist
-import pandas
-import json
 
 class AbstractCollection(object):
     _metadataCol = None
@@ -12,9 +10,9 @@ class AbstractCollection(object):
     def type(self):
         return self._type
 
-    def __init__(self, ctype=None):
+    def __init__(self, ctype=None, user=None):
         self._type = ctype
-        self._metadataCol = Metadata if self.type is None else globals()['%s' % self.type]
+        self._metadataCol = getDBObject('Metadata', user) if self.type is None else getDBObject(ctype, user)
 
     def getDocumentsAsDict(self, projectName, **kwargs):
         dictList = QueryResult(self.getDocuments(projectName=projectName, **kwargs)).asDict()
@@ -40,6 +38,15 @@ class AbstractCollection(object):
             else:
                 params['desc__%s' % key] = value
         return self._metadataCol.objects(projectName=projectName, **params)
+
+    def getAllDocuments(self):
+        return self._metadataCol.objects()
+
+    def _getAllValueByKey(self, key, **query):
+        return [doc[key] for doc in self.getAllDocuments(**query)]
+
+    def getProjectList(self):
+        return self._getAllValueByKey('projectName')
 
     def getDocumentByID(self, id):
         return self._metadataCol.objects.get(id=id)
@@ -74,8 +81,8 @@ class AbstractCollection(object):
 
 
 class Record_Collection(AbstractCollection):
-    def __init__(self, ctype=None):
-        super().__init__(ctype)
+    def __init__(self, ctype='Record', user=None):
+        super().__init__(ctype, user=user)
 
     def getData(self, projectName, usePandas=None, **kwargs):
         """
@@ -95,8 +102,8 @@ class Record_Collection(AbstractCollection):
 
 class Measurements_Collection(Record_Collection):
 
-    def __init__(self):
-        super().__init__(ctype='Measurements')
+    def __init__(self, user=None):
+        super().__init__(ctype='Measurements', user=user)
 
     def meta(self):
         return self._metadataCol
@@ -104,40 +111,40 @@ class Measurements_Collection(Record_Collection):
 
 class Simulations_Collection(Record_Collection):
 
-    def __init__(self):
-        super().__init__(ctype='Simulations')
+    def __init__(self, user=None):
+        super().__init__(ctype='Simulations', user=user)
 
 
 class Analysis_Collection(Record_Collection):
 
-    def __init__(self):
-        super().__init__(ctype='Analysis')
+    def __init__(self, user=None):
+        super().__init__(ctype='Analysis', user=user)
 
 
-class Projects_Collection(AbstractCollection):
-    def __init__(self):
-        super().__init__(ctype='Projects')
-
-    def namesList(self):
-        """
-        Returns the list of the names of the existing projects.
-
-        :return:  list
-        """
-        queryResult = QueryResult(self._metadataCol.objects())
-        return queryResult.projectName()
-
-    def __getitem__(self, projectName):
-        try:
-            return self.getUnique(projectName=projectName)
-        except MultipleObjectsReturned:
-            raise MultipleObjectsReturned('There are multiple documents for this project.\n'
-                                          'You should have only one document per project in the Project collection.')
-        except DoesNotExist:
-            raise DoesNotExist('There is no document for this project.')
-
-    def __contains__(self, projectName):
-        return projectName in self.namesList()
+# class Projects_Collection(AbstractCollection):
+#     def __init__(self, user=None):
+#         super().__init__(ctype='Projects', user=user)
+#
+#     def namesList(self):
+#         """
+#         Returns the list of the names of the existing projects.
+#
+#         :return:  list
+#         """
+#         queryResult = QueryResult(self._metadataCol.objects())
+#         return queryResult.projectName()
+#
+#     def __getitem__(self, projectName):
+#         try:
+#             return self.getUnique(projectName=projectName)
+#         except MultipleObjectsReturned:
+#             raise MultipleObjectsReturned('There are multiple documents for this project.\n'
+#                                           'You should have only one document per project in the Project collection.')
+#         except DoesNotExist:
+#             raise DoesNotExist('There is no document for this project.')
+#
+#     def __contains__(self, projectName):
+#         return projectName in self.namesList()
 
 
 class QueryResult(object):
@@ -149,14 +156,9 @@ class QueryResult(object):
     def getData(self, **kwargs):
         return [doc.getData(**kwargs) for doc in self._docList]
 
-    def projectName(self):
-        namesList = [doc.projectName for doc in self._docList]
-        return namesList
-
     def delete(self):
         for doc in self._docList:
             doc.delete()
 
     def asDict(self):
-        jsonList = [doc.asDict() for doc in self._docList]
-        return jsonList
+        return [doc.asDict() for doc in self._docList]

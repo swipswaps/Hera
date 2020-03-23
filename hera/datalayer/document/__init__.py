@@ -1,19 +1,36 @@
 from mongoengine import *
 import os
 import json
+import getpass
+from .metadataDocument import MetadataFrame
+
+dbObjects = {}
 
 
-def connectToDatabase(dbName = None):
+def getMongoConfigFromJson(user=None):
+    """
+    Get the mongoConfig of a user from .pyhera/config.json
+
+    :param user:
+    :return:
+    """
     configFile = os.path.join(os.environ.get('HOME'), '.pyhera', 'config.json')
     if os.path.isfile(configFile):
         with open(configFile, 'r') as jsonFile:
             mongoConfig = json.load(jsonFile)
+            mongoConfig = mongoConfig[getpass.getuser()] if user is None else mongoConfig[user]
     else:
-        configData = dict(username='{username}',
-                          password='{password}',
-                          dbIP='{databaseIP}',
-                          dbName='{databaseName}'
-                          )
+        configData = {getpass.getuser(): dict(username='{username}',
+                                              password='{password}',
+                                              dbIP='{databaseIP}',
+                                              dbName='{databaseName}'
+                                              ),
+                      'public': dict(username='{username}',
+                                     password='{password}',
+                                     dbIP='{databaseIP}',
+                                     dbName='public'
+                                     )
+                      }
 
         if not os.path.isdir(os.path.dirname(configFile)):
             os.makedirs(os.path.dirname(configFile))
@@ -26,16 +43,80 @@ def connectToDatabase(dbName = None):
             configFile)
 
         raise IOError(errorMessage)
-
-    dbName = mongoConfig['dbName'] if dbName is None else dbName
-
+    return mongoConfig
     ## build the connection to the db.
+
+
+def connectToDatabase(mongoConfig):
+    """
+    Creates a connection to the database according to the mongoConfig.
+
+    :param mongoConfig:
+    :return:
+    """
     connect(alias='%s-alias' % mongoConfig['dbName'],
             host=mongoConfig['dbIP'],
-            db=dbName,
+            db=mongoConfig['dbName'],
             username=mongoConfig['username'],
             password=mongoConfig['password'],
             authentication_source='admin'
             )
 
-    return mongoConfig
+
+def createDBConnection(user, mongoConfig):
+    """
+    Creates a connection to the database.
+    Creates mongoengine objects and saving them to a global dictionary dbObjects.
+
+    :param user:
+    :param mongoConfig
+    :return:
+    """
+    dbDict = {}
+
+    connectToDatabase(mongoConfig=mongoConfig)
+
+    dbName = mongoConfig['dbName']
+
+    new_Metadata = type('Metadata', (DynamicDocument, MetadataFrame), {'meta': {'db_alias': '%s-alias' % dbName,
+                                                                                'allow_inheritance': True,
+                                                                                'auto_create_indexes': True,
+                                                                                'indexes': [('geometery', '2dsphere')]
+                                                                                }
+                                                                       }
+                        )
+    dbDict['Metadata'] = new_Metadata
+
+    new_Measurements = type('Measurements', (new_Metadata,), {})
+    dbDict['Measurements'] = new_Measurements
+
+    new_Analysis = type('Analysis', (new_Metadata,), {})
+    dbDict['Analysis'] = new_Analysis
+
+    new_Simulations = type('Simulations', (new_Metadata,), {})
+    dbDict['Simulations'] = new_Simulations
+
+    dbObjects[user] = dbDict
+
+    return user, dbDict
+
+
+# ---------------------default connections--------------------------
+for user in [getpass.getuser(), 'public']:
+    createDBConnection(user=user,
+                       mongoConfig=getMongoConfigFromJson(user=user)
+                       )
+# -------------------------------------------------------------------
+
+
+def getDBObject(objectName, user=None):
+    """
+    Returns the mongoengine object(objectName) of a given user from the global dictionary dbObjects.
+
+    :param objectName:
+    :param user:
+    :return:
+    """
+    user = getpass.getuser() if user is None else user
+    return dbObjects[user][objectName]
+

@@ -4,7 +4,7 @@ from ..analytics.turbulencecalculator import TurbulenceCalculator
 from .... import datalayer
 
 
-def getTurbulenceCalculatorFromDB(projectName, samplingWindow, start=None, end=None, usePandas=False, isMissingData=False, **kwargs):
+def getTurbulenceCalculatorFromDB(projectName, samplingWindow, start, end, usePandas=False, isMissingData=False, **kwargs):
     """
     This method loads the raw data that corresponds to the requirements (projectName, station, instrument.. ) and
     creates a turbulence calculator with the desirable sampling window.
@@ -18,7 +18,6 @@ def getTurbulenceCalculatorFromDB(projectName, samplingWindow, start=None, end=N
 
     :return: A turbulence calculator of the loaded raw data.
     """
-    projectData = datalayer.Projects[projectName].info
 
     if type(start) is str:
         start = pandas.Timestamp(start)
@@ -26,16 +25,9 @@ def getTurbulenceCalculatorFromDB(projectName, samplingWindow, start=None, end=N
     if type(end) is str:
         end = pandas.Timestamp(end)
 
-    if start is None or end is None:
-        start = projectData['start']
-        end = projectData['end']
-
     dataList = datalayer.Measurements.getData(projectName = projectName, usePandas = usePandas, start__lte=end, end__gte=start, **kwargs)
-    if usePandas:
-        rawData = pandas.concat(dataList)
-    else:
-        rawData = dask.dataframe.concat(dataList)
 
+    rawData = pandas.concat(dataList) if usePandas else dask.dataframe.concat(dataList)
     rawData = rawData[start:end]
 
     identifier = {'projectName': projectName,
@@ -47,6 +39,8 @@ def getTurbulenceCalculatorFromDB(projectName, samplingWindow, start=None, end=N
                   'end': end
                   }
     identifier.update(kwargs)
+
+    projectData = datalayer.Projects(projectName=projectName).getMetadata() # need to complete it
 
     if identifier['station'] is not None:
         stationData = projectData['stations'].query("station=='%s'" % identifier['station']).iloc[0]
