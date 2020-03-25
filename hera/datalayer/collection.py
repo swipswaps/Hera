@@ -19,25 +19,30 @@ class AbstractCollection(object):
         ret = dict(documents=dictList)
         return ret
 
-    def getUnique(self, projectName, **kwargs):
-        params = {}
-        for key, value in kwargs.items():
-            if key=='type':
-                params[key] = value
-            else:
-                params['desc__%s' % key] = value
-        return self._metadataCol.objects.get(projectName=projectName, **params)
+    def getDocuments(self, projectName, resource=None, dataFormat=None, type=None, **desc):
+        """
+        Get the documents satisfies the given query.
+        If projectName is None search over all projects.
 
-    def getDocuments(self, projectName, **kwargs):
-        # if self.type is not None:
-        #     kwargs['type'] = self.type
-        params = {}
-        for key, value in kwargs.items():
-            if key=='type':
-                params[key] = value
-            else:
-                params['desc__%s' % key] = value
-        return self._metadataCol.objects(projectName=projectName, **params)
+        :param projectName:
+        :param resource:
+        :param dataFormat:
+        :param type:
+        :param desc:
+        :return:
+        """
+        query = {}
+        if resource is not None:
+            query['resource'] = resource
+        if dataFormat is not None:
+            query['dataFormat'] = dataFormat
+        if type is not None:
+            query['type'] = type
+        if projectName is not None:
+            query['projectName'] = projectName
+        for key, value in desc.items():
+                query['desc__%s' % key] = value
+        return self._metadataCol.objects(**query)
 
     def getAllDocuments(self):
         return self._metadataCol.objects()
@@ -52,8 +57,6 @@ class AbstractCollection(object):
         return self._metadataCol.objects.get(id=id)
 
     def addDocument(self, **kwargs):
-        # if self.type is not None:
-        #     kwargs['type'] = self.type
         if 'desc__type' in kwargs or 'type' in kwargs['desc']:
             raise KeyError("'type' key can't be in the desc")
         try:
@@ -66,11 +69,6 @@ class AbstractCollection(object):
 
     def deleteDocuments(self, projectName, **kwargs):
         QueryResult(self.getDocuments(projectName=projectName, **kwargs)).delete()
-
-
-class Record_Collection(AbstractCollection):
-    def __init__(self, ctype='Record', user=None):
-        super().__init__(ctype, user=user)
 
     def getData(self, projectName, usePandas=None, **kwargs):
         """
@@ -88,7 +86,7 @@ class Record_Collection(AbstractCollection):
             return queryResult.getData(usePandas=usePandas)
 
 
-class Measurements_Collection(Record_Collection):
+class Measurements_Collection(AbstractCollection):
 
     def __init__(self, user=None):
         super().__init__(ctype='Measurements', user=user)
@@ -97,13 +95,13 @@ class Measurements_Collection(Record_Collection):
         return self._metadataCol
 
 
-class Simulations_Collection(Record_Collection):
+class Simulations_Collection(AbstractCollection):
 
     def __init__(self, user=None):
         super().__init__(ctype='Simulations', user=user)
 
 
-class Analysis_Collection(Record_Collection):
+class Analysis_Collection(AbstractCollection):
 
     def __init__(self, user=None):
         super().__init__(ctype='Analysis', user=user)
