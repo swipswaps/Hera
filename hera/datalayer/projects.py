@@ -1,9 +1,9 @@
-from .collection import Measurements_Collection
+from .collection import AbstractCollection
 import pandas
 
 
 def getProjectList():
-    return list(set(Measurements_Collection().getProjectList()))
+    return list(set(AbstractCollection().getProjectList()))
 
 
 class Projects(object):
@@ -13,5 +13,5 @@ class Projects(object):
         self._projectName = projectName
 
     def getMetadata(self):
-        descList = [doc.desc for doc in Measurements_Collection().getDocuments(projectName=self._projectName)]
+        descList = [doc.desc for doc in AbstractCollection().getDocuments(projectName=self._projectName)]
         return pandas.DataFrame(descList)
