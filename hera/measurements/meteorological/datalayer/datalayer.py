@@ -25,7 +25,7 @@ def getTurbulenceCalculatorFromDB(projectName, samplingWindow, start, end, usePa
     if type(end) is str:
         end = pandas.Timestamp(end)
 
-    dataList = datalayer.Measurements.getData(projectName = projectName, usePandas = usePandas, start__lte=end, end__gte=start, **kwargs)
+    dataList = datalayer.Measurements.getData(projectName = projectName, usePandas = usePandas, **kwargs)
 
     rawData = pandas.concat(dataList) if usePandas else dask.dataframe.concat(dataList)
     rawData = rawData[start:end]
@@ -40,10 +40,10 @@ def getTurbulenceCalculatorFromDB(projectName, samplingWindow, start, end, usePa
                   }
     identifier.update(kwargs)
 
-    projectData = datalayer.Projects(projectName=projectName).getMetadata() # need to complete it
+    projectData = datalayer.Projects(projectName=projectName).getMetadata()[['station','instrument', 'height']].drop_duplicates()
 
     if identifier['station'] is not None:
-        stationData = projectData['stations'].query("station=='%s'" % identifier['station']).iloc[0]
+        stationData = projectData.query("station=='%s'" % identifier['station']).iloc[0]
         identifier['buildingHeight'] = stationData.get('buildingHeight', None)
         identifier['averagedHeight'] = stationData.get('averagedHeight', None)
 
