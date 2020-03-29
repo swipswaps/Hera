@@ -16,12 +16,7 @@ def getMongoJSON():
                                               password='{password}',
                                               dbIP='{databaseIP}',
                                               dbName='{databaseName}'
-                                              ),
-                      'public': dict(username='{username}',
-                                     password='{password}',
-                                     dbIP='{databaseIP}',
-                                     dbName='public'
-                                     )
+                                              )
                       }
 
         if not os.path.isdir(os.path.dirname(configFile)):
