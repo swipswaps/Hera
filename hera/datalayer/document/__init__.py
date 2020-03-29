@@ -6,19 +6,11 @@ from .metadataDocument import MetadataFrame
 
 dbObjects = {}
 
-
-def getMongoConfigFromJson(user=None):
-    """
-    Get the mongoConfig of a user from .pyhera/config.json
-
-    :param user:
-    :return:
-    """
+def getMongoJSON():
     configFile = os.path.join(os.environ.get('HOME'), '.pyhera', 'config.json')
     if os.path.isfile(configFile):
         with open(configFile, 'r') as jsonFile:
             mongoConfig = json.load(jsonFile)
-            mongoConfig = mongoConfig[getpass.getuser()] if user is None else mongoConfig[user]
     else:
         configData = {getpass.getuser(): dict(username='{username}',
                                               password='{password}',
@@ -43,6 +35,22 @@ def getMongoConfigFromJson(user=None):
             configFile)
 
         raise IOError(errorMessage)
+    return mongoConfig
+
+def getDBNamesFromJSON():
+    mongoConfigJSON = getMongoJSON()
+    return [x for x in mongoConfigJSON.keys()] 
+
+def getMongoConfigFromJson(user=None):
+    """
+    Get the mongoConfig of a user from .pyhera/config.json
+
+    :param user:
+    :return:
+    """
+    mongoConfigJSON = getMongoJSON()
+    mongoConfig = mongoConfigJSON[getpass.getuser()] if user is None else mongoConfigJSON[user]
+    
     return mongoConfig
     ## build the connection to the db.
 
@@ -102,7 +110,7 @@ def createDBConnection(user, mongoConfig):
 
 
 # ---------------------default connections--------------------------
-for user in [getpass.getuser(), 'public']:
+for user in getDBNamesFromJSON():
     createDBConnection(user=user,
                        mongoConfig=getMongoConfigFromJson(user=user)
                        )
