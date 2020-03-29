@@ -25,7 +25,8 @@ def getTurbulenceCalculatorFromDB(projectName, samplingWindow, start, end, usePa
     if type(end) is str:
         end = pandas.Timestamp(end)
 
-    dataList = datalayer.Measurements.getData(projectName = projectName, usePandas = usePandas, start__lte=end, end__gte=start, **kwargs)
+    docList = datalayer.Measurements.getDocuments(projectName = projectName, start__lte=end, end__gte=start, **kwargs)
+    dataList = [doc.getData(usePandas=usePandas) for doc in docList]
 
     rawData = pandas.concat(dataList) if usePandas else dask.dataframe.concat(dataList)
     rawData = rawData[start:end]
