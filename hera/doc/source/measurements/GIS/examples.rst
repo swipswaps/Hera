@@ -5,4 +5,3 @@ GIS examples
     :maxdepth: 2
 
     examples/ManagingData
-    examples/Plotting
