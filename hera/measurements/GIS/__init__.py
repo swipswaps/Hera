@@ -1,1 +1,2 @@
-from .analytics.GISdatahandler import GIS_datahandler
+from .datalayer.datalayer import GIS_datalayer
+from .analytics.Plotting import Plotting
