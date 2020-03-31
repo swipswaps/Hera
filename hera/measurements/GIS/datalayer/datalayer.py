@@ -251,7 +251,7 @@ class GIS_datalayer():
 
         else:
             if points==None and CutName==None:
-                check = self.check_data(mode=mode, **kwargs)
+                check = self.check_data(**kwargs)
             elif points==None and CutName!=None:
                 check = self.check_data(CutName=CutName, mode=mode, **kwargs)
             elif CutName==None and points!=None:
