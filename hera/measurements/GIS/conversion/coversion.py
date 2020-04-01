@@ -69,7 +69,7 @@ class converter():
 
         if type(data) == str:
             polygon = self._GISdatalayer.getGeometry(data)
-            dataframe = self._GISdatalayer.getGISData(Geometry=data, GeometryMode="contains")[0]
+            dataframe = self._GISdatalayer.getGISDocuments(Geometry=data, GeometryMode="contains")[0].getData()
             geodata = self._manipulator.PolygonDataFrameIntersection(polygon=polygon, dataframe=dataframe)
         elif type(data) == geopandas.geodataframe.GeoDataFrame:
             geodata = data
