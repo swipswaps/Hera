@@ -10,7 +10,7 @@ from .... import datalayer
 
 # import FreeCAD
 
-class converter():
+class convert():
 
     _projectName = None
     _FilesDirectory = None
@@ -26,7 +26,7 @@ class converter():
         self._Measurments = datalayer.Measurements
         self._manipulator = dataManipulations()
 
-    def addSTLpath(self, path, NewFileName, **kwargs):
+    def addSTLtoDB(self, path, NewFileName, **kwargs):
         """
         Adds a path to the dataframe under the type 'stlType'.
 
@@ -47,7 +47,7 @@ class converter():
                                       resource=path,
                                       dataFormat="string")
 
-    def convert_to_stl(self, data, NewFileName, dxdy=None, save=True, flat=None, path=None, **kwargs):
+    def toSTL(self, data, NewFileName, dxdy=None, save=True, addtoDB=True, flat=None, path=None, **kwargs):
 
         """
         Converts a geopandas dataframe data to an stl file.
@@ -76,36 +76,18 @@ class converter():
         else:
             raise KeyError("data should be geopandas dataframe or a polygon.")
 
-        stl = STL(NewFileName,dxdy)
-        stlstr, newdata = stl.Convert_geopandas_to_stl(gpandas=geodata, flat=flat)
+        stlstr, newdata = self.Convert_geopandas_to_stl(gpandas=geodata, flat=flat, NewFileName=NewFileName, dxdy=dxdy)
 
         if save:
             p = self._FilesDirectory if path is None else path
             new_file_path = p + "/" + NewFileName + ".stl"
             new_file = open(new_file_path, "w")
             new_file.write(stlstr)
-            self.addSTLpath(p, NewFileName, **kwargs)
+
+            if addtoDB:
+                self.addSTLtoDB(p, NewFileName, **kwargs)
 
         return stlstr, newdata
-
-class STL():
-
-    _dxdy = None
-    _NewFileName = None
-
-    @property
-    def dxdy(self):
-        return self._dxdy
-
-    @dxdy.setter
-    def dxdy(self, value):
-        if value is not None:
-            self._dxdy = value
-
-    def __init__(self, NewFileName, dxdy=None):
-
-        self._dxdy = 50 if dxdy is None else dxdy  # m
-        self._NewFileName = NewFileName
 
     def _make_facet_str(self, n, v1, v2, v3):
         facet_str = 'facet normal ' + ' '.join(map(str, n)) + '\n'
@@ -117,7 +99,7 @@ class STL():
         facet_str += 'endfacet\n'
         return facet_str
 
-    def _makestl(self, X, Y, elev):
+    def _makestl(self, X, Y, elev, NewFileName):
         """
             Takes a mesh of x,y and elev and convert it to stl file.
 
@@ -127,7 +109,7 @@ class STL():
 
         """
         base_elev = 0
-        stl_str = 'solid ' + self._NewFileName + '\n'
+        stl_str = 'solid ' + NewFileName + '\n'
         for i in range(elev.shape[0] - 1):
             for j in range(elev.shape[1] - 1):
 
@@ -199,10 +181,10 @@ class STL():
                         n = n / sqrt(sum(n ** 2))
                         stl_str += self._make_facet_str(n, vlist[k], vblist[k], vblist[l])
 
-        stl_str += 'endsolid ' + self._NewFileName + '\n'
+        stl_str += 'endsolid ' + NewFileName + '\n'
         return stl_str
 
-    def Convert_geopandas_to_stl(self, gpandas, flat=None):
+    def Convert_geopandas_to_stl(self, gpandas, NewFileName, dxdy=50, flat=None):
         """
             Gets a shape file of topography.
             each contour line has property 'height'.
@@ -219,7 +201,7 @@ class STL():
 
         print("Mesh boundaries x=(%s,%s) ; y=(%s,%s)" % (xmin, xmax, ymin, ymax))
         # 1.2 build the mesh.
-        grid_x, grid_y = numpy.mgrid[(xmin):(xmax):self.dxdy, (ymin):(ymax):self.dxdy]
+        grid_x, grid_y = numpy.mgrid[(xmin):(xmax):dxdy, (ymin):(ymax):dxdy]
 
         # 2. Get the points from the geom
         Height = []
@@ -246,7 +228,7 @@ class STL():
         if numpy.isnan(grid_z2).any():
             print("Found some NaN in cubic iterpolation. consider increasing the boundaries of the interior")
 
-        stlstr = self._makestl(grid_x, grid_y, grid_z2)
+        stlstr = self._makestl(grid_x, grid_y, grid_z2, NewFileName)
 
         data = pandas.DataFrame({"XY": XY, "Height": Height})
 
