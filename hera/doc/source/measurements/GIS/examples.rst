@@ -6,3 +6,5 @@ GIS examples
 
     examples/ManagingData
     examples/Plotting
+    examples/Convertions
+    examples/DataManipulations

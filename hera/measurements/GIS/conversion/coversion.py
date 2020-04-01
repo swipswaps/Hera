@@ -3,7 +3,9 @@ from shapely.geometry import MultiLineString, LineString
 from scipy.interpolate import griddata
 from numpy import array, cross, sqrt
 import numpy
+import pandas
 from ..datalayer.datalayer import GIS_datalayer
+from ..analytics.dataManipulations import dataManipulations
 from .... import datalayer
 
 # import FreeCAD
@@ -14,6 +16,7 @@ class converter():
     _FilesDirectory = None
     _Measurments = None
     _GISdatalayer = None
+    _manipulator = None
 
     def __init__(self, projectName, FilesDirectory):
 
@@ -21,8 +24,22 @@ class converter():
         self._projectName = projectName
         self._GISdatalayer = GIS_datalayer(projectName=projectName, FilesDirectory=FilesDirectory)
         self._Measurments = datalayer.Measurements
+        self._manipulator = dataManipulations()
 
     def addSTLpath(self, path, NewFileName, **kwargs):
+        """
+        Adds a path to the dataframe under the type 'stlType'.
+
+        Parameters:
+
+            path: The path (string)
+            NewFileName: A name for the file (string)
+            kwargs: Additional parameters for the document.
+
+        Returns: A list that contains the stl string and a dict that holds information about it.
+        -------
+
+        """
 
         self._Measurments.addDocument(projectName=self._projectName,
                                       desc=dict(name = NewFileName, **kwargs),
@@ -32,19 +49,39 @@ class converter():
 
     def convert_to_stl(self, data, NewFileName, dxdy=None, save=True, flat=None, path=None, **kwargs):
 
+        """
+        Converts a geopandas dataframe data to an stl file.
+
+        Parameters:
+
+            data: The data that should be converted to stl. May be a dataframe or a name of a saved polygon in the database.
+            NewFileName: A name for the new stl file, also used in the stl string. (string)
+            dxdy: the dimention of each cell in the mesh in meters, the default is 50.
+            save: Default is True. If True, the new stl string is saved as a file and the path to the file is added to the database.
+            flat: Default is None. Else, it assumes that the area is flat and the value of flat is the height of the mesh cells.
+            path: Default is None. Then, the path in which the data is saved is the given self.FilesDirectory. Else, the path is path. (string)
+            kwargs: Any additional metadata to be added to the new document in the database.
+
+        Returns
+        -------
+
+        """
+
         if type(data) == str:
-            geodata = geopandas.read_file(data)
+            polygon = self._GISdatalayer.getGeometry(data)
+            dataframe = self._GISdatalayer.getGISData(Geometry=data, GeometryMode="contains")[0]
+            geodata = self._manipulator.PolygonDataFrameIntersection(polygon=polygon, dataframe=dataframe)
         elif type(data) == geopandas.geodataframe.GeoDataFrame:
             geodata = data
         else:
-            raise KeyError("data should be geopandas dataframe or a path.")
+            raise KeyError("data should be geopandas dataframe or a polygon.")
 
         stl = STL(NewFileName,dxdy)
-        stlstr, newdata = stl.Convert_geopandas_to_stl(gpandas=geodata,solidname=NewFileName, flat=flat)
+        stlstr, newdata = stl.Convert_geopandas_to_stl(gpandas=geodata, flat=flat)
 
         if save:
             p = self._FilesDirectory if path is None else path
-            new_file_path = p + "/" + NewFileName
+            new_file_path = p + "/" + NewFileName + ".stl"
             new_file = open(new_file_path, "w")
             new_file.write(stlstr)
             self.addSTLpath(p, NewFileName, **kwargs)
@@ -67,7 +104,7 @@ class STL():
 
     def __init__(self, NewFileName, dxdy=None):
 
-        self._dxdy = 10 if dxdy is None else dxdy  # m
+        self._dxdy = 50 if dxdy is None else dxdy  # m
         self._NewFileName = NewFileName
 
     def _make_facet_str(self, n, v1, v2, v3):
@@ -92,7 +129,6 @@ class STL():
         base_elev = 0
         stl_str = 'solid ' + self._NewFileName + '\n'
         for i in range(elev.shape[0] - 1):
-            print(i)
             for j in range(elev.shape[1] - 1):
 
                 x = X[i, j];
@@ -166,7 +202,7 @@ class STL():
         stl_str += 'endsolid ' + self._NewFileName + '\n'
         return stl_str
 
-    def Convert_geopandas_to_stl(self, gpandas, solidname, flat=None):
+    def Convert_geopandas_to_stl(self, gpandas, flat=None):
         """
             Gets a shape file of topography.
             each contour line has property 'height'.
@@ -212,6 +248,6 @@ class STL():
 
         stlstr = self._makestl(grid_x, grid_y, grid_z2)
 
-        data = {"grid_x": grid_x, "grid_y": grid_y, "grid_z": grid_z2, "XY": XY, "Height": Height, "geo": gpandas}
+        data = pandas.DataFrame({"XY": XY, "Height": Height})
 
         return stlstr, data
