@@ -10,9 +10,10 @@ class MetadataFrame(object):
     resource = DynamicField(required=True)
     dataFormat = StringField(required=True)
 
-    def asDict(self):
+    def asDict(self, with_id=False):
         docDict = json.loads(self.to_json())
-        docDict.pop('_id')
+        if not with_id:
+            docDict.pop('_id')
         # docDict.pop('_cls')
         return docDict
 

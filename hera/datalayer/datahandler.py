@@ -4,6 +4,8 @@ import xarray
 import json
 from json import JSONDecodeError
 import geopandas
+import matplotlib.image as mpimg
+
 
 def getHandler(type):
     return globals()['DataHandler_%s' % type]
@@ -25,6 +27,7 @@ class DataHandler_string(object):
         """
         return resource
 
+
 class DataHandler_time(object):
     """
         The resource is a timestamp.
@@ -41,6 +44,7 @@ class DataHandler_time(object):
             pandas.Timestamp
         """
         return pandas.Timestamp(resource)
+
 
 class DataHandler_HDF(object):
     """
@@ -90,6 +94,7 @@ class DataHandler_netcdf_xarray(object):
 
         return df
 
+
 class DataHandler_JSON_dict(object):
 
     @staticmethod
@@ -114,12 +119,14 @@ class DataHandler_JSON_pandas(object):
 
         return df
 
+
 class DataHandler_geopandas(object):
     @staticmethod
     def getData(resource):
         df = geopandas.read_file(resource)
 
         return df
+
 
 class DataHandler_parquet(object):
 
@@ -139,3 +146,12 @@ class DataHandler_parquet(object):
             df = df.compute()
 
         return df
+
+
+class DataHandler_image(object):
+
+    @staticmethod
+    def getData(resource):
+        img = mpimg.imread(resource)
+
+        return img
