@@ -1,6 +1,6 @@
 import argparse
 import json
-from pyhera.hera import datalayer
+from hera import datalayer
 
 parser = argparse.ArgumentParser()
 parser.add_argument('command', nargs=1, type=str)
