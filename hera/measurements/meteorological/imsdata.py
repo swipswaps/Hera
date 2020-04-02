@@ -2,9 +2,14 @@ import pandas
 import glob
 import numpy
 import dask.dataframe as dd
-from ... import datalayer
 import os
 import shutil
+
+from ... import datalayer
+from ... utils import andClause
+from ... analytics import statistics
+
+
 
 
 
@@ -223,9 +228,8 @@ class DataLoader(object):
             stn_dask=groupby_data.get_group(stnname)
 
             filtered_stnname = "".join(filter(lambda x: not x.isdigit(), stnname)).strip()
+            print('updating %s data' %filtered_stnname)
 
-            import pdb
-            pdb.set_trace()
 
             dir_path = os.path.join(outputpath, filtered_stnname).replace(' ','_')
             if not os.path.exists(dir_path):
@@ -238,8 +242,6 @@ class DataLoader(object):
                                                           DataSource=DataSource,
                                                           StationName=filtered_stnname)
 
-            import pdb
-            pdb.set_trace()
 
             if docList:
                 if len(docList)>1:
@@ -247,15 +249,14 @@ class DataLoader(object):
                 else:
 
                     # get current data from database
-                    Data=[docList[0].getData(),stn_dask]
+                    stn_db=docList[0].getData()
+                    Data=[stn_db,stn_dask]
                     new_Data=dd.concat(Data,interleave_partitions=True)\
                                  .reset_index().set_index(time_coloumn)\
                                  .drop_duplicates()\
                                  .repartition(partition_size=self._np_size)
 
-                    import pdb
-                    pdb.set_trace()
-                    shutil.rmtree(dir_path)
+                    # shutil.rmtree(dir_path)
 
                     # fileformat = 'parquet'
                     # parquet_files = glob.glob(os.path.join(dir_path, "*" + fileformat))
@@ -383,7 +384,6 @@ class DataLoader(object):
         pass
 
 
-
 def getDocFromFile(path,time_coloumn='time_obs',**kwargs):
 
     """
@@ -404,9 +404,7 @@ def getDocFromDB(projectName,type='meteorological',DataSource='IMS',StationName=
 
     desc={}
     desc.update(kwargs)
-    import pdb
-    pdb.set_trace()
-    if StationName:
+    if StationName is not None:
         desc.update(StationName=StationName)
 
     docList = datalayer.Measurements.getDocuments(projectName=projectName,
@@ -415,6 +413,7 @@ def getDocFromDB(projectName,type='meteorological',DataSource='IMS',StationName=
                                                   **desc
                                                  )
     return docList
+
 
 
 
