@@ -14,6 +14,7 @@ Welcome to pyhera's documentation!
    measurements
    simulations
    instructions_for_dev
+   how_to
 
 
 Indices and tables
