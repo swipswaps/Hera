@@ -12,56 +12,57 @@ import xarray
 import os
 import glob
 
-
-class pvdatastructures(object):
+class paraviewOpenFOAM(object):
     """
-        A utility class to hols the components of
-        a scalar and a vector.
-
-        The components will be selected based on the length of the field.
-
-        length  |  type
-        ----------------
-        1       | scalar.
-        2       | vector.
-        3       | tensor.
-    """
-    componentsNames = None
-
-    def __init__(self):
-        self.componentsNames = {(): "",
-                                (0,): "_x",
-                                (1,): "_y",
-                                (2,): "_z",
-                                (0, 0): "_xx",
-                                (0, 1): "_xy",
-                                (0, 2): "_xz",
-                                (1, 0): "_yx",
-                                (1, 1): "_yy",
-                                (1, 2): "_yz",
-                                (2, 0): "_zx",
-                                (2, 1): "_zy",
-                                (2, 2): "_zz"}
-
-
-class pvOFBase(object):
+        A class to extract openFOAM file format
+        using VTK filters and write as parquet or netcdf files.
     """
 
-    """
-    _Fields = None
-    _FileName = None
+    _componentsNames = None  # names of components for reading.
 
-    _componentsNames = None
+    _netcdf_dir     = None    # path to save the netcdf.
+    _parquet_dir    = None    # path to save parquet files.
 
-    netcdfdir = None
-    hdfdir    = None
-
+    _reader = None      # the reference to the reader object.
+    _readerName = None  # the name of the reader in the vtk pipeline.
 
     @property
-    def fields(self):
-        return self._Fields
+    def reader(self):
+        return self._reader
 
-    def __init__(self, servername=None):
+    @property
+    def readerName(self):
+        return self._readerName
+
+    def __init__(self,casePath, caseType='Decomposed Case', fieldnames=None, servername=None):
+        """
+            Initializes the paraviewOpenFOAM class.
+
+            Supports single case or decomposed case and
+            works with paraview server if initializes.
+
+        Parameters
+        -----------
+
+        casePath: str
+                    A full path to the case directory.
+
+        CaseType:  str
+                Either 'Decomposed Case' for parallel cases or 'Reconstructed Case'
+                for single processor cases.
+
+        fieldnames: None or list of field names.  default: None.
+                The list of fields to load.
+                if None, read all fields
+
+        servername: str
+                if None, work locally.
+                connection string to the paraview server.
+
+                The connection string is printed when the server is initialized.
+
+        """
+
         if servername is not None:
             pvsimple.Connect(servername)
 
@@ -88,58 +89,75 @@ class pvOFBase(object):
                                  (2, 1): "_zy",
                                  (2, 2): "_zz"}
 
-    # CaseType = 'Decomposed Case' ,CaseType = 'Reconstructed Case'
-    def ReadCase(self, casename, filename, CaseType='Decomposed Case', fieldnames=None):
-        reader = pvsimple.OpenFOAMReader(FileName=filename, CaseType=CaseType, guiName=casename)
-        reader.MeshRegions = ['internalMesh']
+        self._ReadCase(readerName="mainReader", casePath=casePath, CaseType=caseType, fieldnames=fieldnames)
+
+    def _ReadCase(self, readerName, casePath, CaseType='Decomposed Case', fieldnames=None):
+        """
+            Constructs a reader and register it in the vtk pipeline.
+
+            Handles either parallel or single format.
+
+        Parameters
+        -----------
+
+        readerName:
+                the name of the reader.
+        casePath:
+                a full path to the case directory.
+        CaseType: str
+                Either 'Decomposed Case' for parallel cases or 'Reconstructed Case'
+                for single processor cases.
+        fieldnames: list of str
+                List of field names to load.
+                if None, read all the fields.
+        :return:
+                the reader
+        """
+        self._readerName  = readerName
+        self._reader = pvsimple.OpenFOAMReader(FileName="%s/tmp.foam" % casePath, CaseType=CaseType, guiName=readerName)
+        self._reader.MeshRegions = ['internalMesh']
         if fieldnames is not None:
             reader.CellArrays = fieldnames
 
         reader.UpdatePipeline()
         return reader
 
-    def ReadLagrangianVTK(self, casename, filenames):  # ['U','p_rgh','T','Tmean']):
-        self._readername = casename
-        reader = pvsimple.LegacyVTKReader(FileNames=filenames, guiName=self._readername)
-        reader.UpdatePipeline()
-        return reader
+    def to_pandas(self, datasourcenamelist, timelist=None, fieldnames=None):
+        return self._readTimeSteps(datasourcenamelist, timelist, fieldnames, xarray=False)
 
-    def to_pandas(self, readername, datasourcenamelist, timelist=None, fieldnames=None):
-        return self.readTimeSteps(readername, datasourcenamelist, timelist, fieldnames, xarray=False)
-
-    def to_xarray(self, readername, datasourcenamelist, timelist=None, fieldnames=None):
-        return self.readTimeSteps(readername, datasourcenamelist, timelist, fieldnames, xarray=True)
+    def to_xarray(self, datasourcenamelist, timelist=None, fieldnames=None):
+        return self._readTimeSteps(datasourcenamelist, timelist, fieldnames, xarray=True)
 
 
-    def readTimeSteps(self,readername,datasourcenamelist,timelist=None, fieldnames=None,xarray=False):
+    def readTimeSteps(self, datasourcenamelist, timelist=None, fieldnames=None, xarray=False):
         """
             reads a list of datasource lists to a dictionary
 
-        :param readername:
-                The source filter (or its name)
+        Parameters
+        ----------
 
-        :param datasourcenamelist:
+        readername: VTK filter, str
+                The reader filter (or its name)
+
+        datasourcenamelist: list
                 A list of names of filters to get.
 
-        :param timelist:
+        timelist: list
                 The list of times to read.
-        :param fieldnames:
-                The list of fieldsto write.
-        :param xarray
+        fieldnames:
+                The list of fields to write.
+        xarray
                 convert pandas results to xarray (works only for regular grids).
-        :return:
-                For each time step.
+
+        Return
+        ------
+
+        For each time step.
                     A map datasourcename -> pandas
         """
-
-        if isinstance(readername,str) or isinstance(readername,unicode):
-            reader = pvsimple.FindSource(readername)
-        else:
-            reader = readername
-
         datasourcenamelist = numpy.atleast_1d(datasourcenamelist)
 
-        timelist = reader.TimestepValues if timelist is None else numpy.atleast_1d(timelist)
+        timelist = self.reader.TimestepValues if timelist is None else numpy.atleast_1d(timelist)
         for timeslice in timelist:
             # read the timestep.
             print("\r Reading time slice %s" % timeslice)
@@ -148,15 +166,10 @@ class pvOFBase(object):
 
             for datasourcename in datasourcenamelist:
                 datasource = pvsimple.FindSource(datasourcename)
-                ret[datasourcename] = self.readTimeStep(reader,datasource,timeslice,fieldnames,xarray)
+                ret[datasourcename] = self._readTimeStep(reader,datasource,timeslice,fieldnames,xarray)
             yield ret
 
-    def readTimeStep(self, readername, datasource,timeslice, fieldnames=None, xarray=False):
-
-        if isinstance(readername,str):
-            reader = pvsimple.FindSource(readername)
-        else:
-            reader = readername
+    def _readTimeStep(self, datasource, timeslice, fieldnames=None, xarray=False):
 
         # read the timestep.
         datasource.UpdatePipeline(timeslice)
@@ -220,7 +233,7 @@ class pvOFBase(object):
 
         batchID = 0
         L = []
-        for xray in self.to_xarray(readername, datasourcenamelist=datasourcenamelist, timelist=timelist, fieldnames=fieldnames):
+        for xray in self.to_xarray(datasourcenamelist=datasourcenamelist, timelist=timelist, fieldnames=fieldnames):
 
             L.append(xray)
             if len(L) == batch:
@@ -266,9 +279,43 @@ class pvOFBase(object):
 
         writeList(L, batchID)
 
+    def write_hdf(self, readername, datasourcenamelist, outfile=None, timelist=None, fieldnames=None,batch=100):
+
+        def writeList(theList, batchID):
+            data = pandas.concat(theList, ignore_index=True,sort=True)
+            curfilename = "%s_%s.hdf" % (outfile, batchID)
+            print("\tWriting filter %s in file %s" % (filtername, curfilename))
+            data.to_hdf(os.path.join(self.hdfdir, curfilename), key=filtername, format='table')
+            batchID += 1
+
+        outfile = readername if outfile is None else outfile
+        if not os.path.isdir(self.hdfdir):
+            os.makedirs(self.hdfdir)
+
+        batchID = 0
+        L = []
+        for pnds in self.to_pandas(readername, datasourcenamelist=datasourcenamelist, timelist=timelist, fieldnames=fieldnames):
+
+            L.append(pnds)
+
+            if len(L) == batch:
+                filterList = [x for x in L[0].keys()]
+                for filtername in filterList:
+                    writeList([item[filtername] for item in L], batchID)
+                L=[]
+
+        writeList(L, batchID)
 
 
     def open_dataset(self, outfile=None, timechunk=10):
+        """
+            Maybe this should be a data hander that is specifc to openfoam xarray (because
+            it uses the name convension)
+
+        :param outfile:
+        :param timechunk:
+        :return:
+        """
 
         filenames = [filename for filename in glob.glob(os.path.join(self.netcdfdir, "%s*.nc" % outfile))]
         filenames = sorted(filenames, key=lambda x: float(x.split(".")[0].split("_")[-1]))
@@ -281,10 +328,10 @@ class pvOFBase(object):
 
 
 if __name__ == "__main__":
-    bse = pvOFBase()
+    bse = pvOFBase(casePath="A.foam")
 
-    print("Creating Reader")
-    reader = bse.ReadCase("A", "A.foam",'Reconstructed Case') # CaseType='Decomposed Case')  # 'Reconstructed Case')
+    #print("Creating Reader")
+    r#eader = bse.ReadCase("A", "A.foam",'Reconstructed Case') # CaseType='Decomposed Case')  # 'Reconstructed Case')
     cellCenters1 = pvsimple.CellCenters(Input=reader,guiName="cellcenter")
     #	print(reader.TimestepValues)
     #	reader = bse.ReadLagrangianVTK("W300StrongDispersion",["O2300_150_1-5_D101-5_P15000_Continuous_7260.vtk"])
