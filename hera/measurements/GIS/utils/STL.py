@@ -108,7 +108,7 @@ class convert():
             elev - matrix of elevation.
 
         """
-        base_elev = 0
+        base_elev = elev.min() - 10
         stl_str = 'solid ' + NewFileName + '\n'
         for i in range(elev.shape[0] - 1):
             for j in range(elev.shape[1] - 1):
@@ -224,12 +224,11 @@ class convert():
                 Height[i] = flat
 
         grid_z2 = griddata(XY, Height, (grid_x, grid_y), method='cubic')
-
-        if numpy.isnan(grid_z2).any():
-            print("Found some NaN in cubic iterpolation. consider increasing the boundaries of the interior")
+        numpy.nan_to_num(grid_z2, nan=min(Height), copy=False)
 
         stlstr = self._makestl(grid_x, grid_y, grid_z2, NewFileName)
 
-        data = pandas.DataFrame({"XY": XY, "Height": Height})
+        data = pandas.DataFrame({"XY": XY, "Height": Height, "gridxMin":grid_x.min(), "gridxMax":grid_x.max(),
+                                 "gridy":grid_y.min(), "gridyMax":grid_y.max(), "gridz":grid_z2.min(), "gridzMax":grid_z2.max(),})
 
         return stlstr, data
