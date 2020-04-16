@@ -61,7 +61,7 @@ def getTurbulenceCalculatorFromData(data, samplingWindow, isMissingData=False):
 
     :return: A turbulence calculator of the loaded raw data.
     """
-    identifier = {'samplingWindow': samplingWindow,
+    identifier = {'samplingWindow': samplingWindow
                   }
 
     return TurbulenceCalculator(rawData=data, metadata={}, identifier=identifier, isMissingData=isMissingData)
