@@ -117,10 +117,10 @@ class paraviewOpenFOAM(object):
         self._reader = pvsimple.OpenFOAMReader(FileName="%s/tmp.foam" % casePath, CaseType=CaseType, guiName=readerName)
         self._reader.MeshRegions = ['internalMesh']
         if fieldnames is not None:
-            reader.CellArrays = fieldnames
+            self._reader.CellArrays = fieldnames
 
-        reader.UpdatePipeline()
-        return reader
+        self._reader.UpdatePipeline()
+        return self._reader
 
     def to_pandas(self, datasourcenamelist, timelist=None, fieldnames=None):
         return self._readTimeSteps(datasourcenamelist, timelist, fieldnames, xarray=False)
@@ -166,7 +166,7 @@ class paraviewOpenFOAM(object):
 
             for datasourcename in datasourcenamelist:
                 datasource = pvsimple.FindSource(datasourcename)
-                ret[datasourcename] = self._readTimeStep(reader,datasource,timeslice,fieldnames,xarray)
+                ret[datasourcename] = self._readTimeStep(datasource,timeslice,fieldnames,xarray)
             yield ret
 
     def _readTimeStep(self, datasource, timeslice, fieldnames=None, xarray=False):
@@ -211,7 +211,6 @@ class paraviewOpenFOAM(object):
                     curstep["%s%s" % (field, self._componentsNames[indxiter])] = arry[L]
                 except ValueError:
                     print("Field %s is problematic... ommiting" % field)
-        ########## adding height
 
 
         curstep = curstep.set_index(['time', 'x', 'y', 'z']).to_xarray() if xarray else curstep

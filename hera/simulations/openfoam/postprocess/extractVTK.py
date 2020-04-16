@@ -10,29 +10,24 @@ from pynumericalmodels.OpenFOAM.postprocess.pvOpenFOAMBase import pvOFBase
 
 class VTKpipeline(object):
     """This class executes a pipeline (runs and saves the outputs).
-    It also  holds the metadata.
+    It also holds the metadata.
 
     Currently works only for the JSON pipeline. The XML (paraview native pipelines) will be built in the future.
 
     The pipeline is initialized with a reader.
     The metadata holds the names of all the filters that has to be executed.
 
-    The VTKpipeline structure:
-        {
-            "metadata" : { see below },
-            "VTKpipelines" : {
-                    <pipeline1> : { pipeline definition, see VTKpipeline },
-                    <pipeline2> : { pipeline definition, see VTKpipeline },
-            }
-        }
-
     The VTK pipeline JSON structure.
         {
-            <guiName> : {
+           "metadata" : {
+                  "guiname" : <gui name>,
+                   ... all other meta data ..........
+
+            },
+            "pipeline" : {
                             "type" : The type of the filter. (clip,slice,...).
                             "write"   : None/hdf (pandas)/netcdf (xarray),
                             "params" : [
-
                                     ("key","value"),
                                           .
                                           .
@@ -40,16 +35,7 @@ class VTKpipeline(object):
                             ],...
                             "downstream" : [Another pipeline]
                         }
-        }
-
-
-    The meta data:
-         {
-            "timelist" : None, a list of time steps to use or a range B:E
-            "fields"   : The fields to write.
-            "datadir": The directory for the nc/hdf files. The default is subdir of the current directory
-         }
-
+    }
      The write to writes the requested filters to the disk.
      The files are saved to a single .nc/hdf file with keys/fields in it. The file name is the
      pipelinename.
@@ -57,7 +43,6 @@ class VTKpipeline(object):
      As before, the hdf/nc is for one timestep.
     """
 
-    _Metadata = None  # Holds the pipeline metadata. as JSON
     _VTKpipelineJSON = None  # Holds the json of the VTK pipeline.
     _pvOFBase = None  # Holds the OF base.
 
@@ -71,22 +56,19 @@ class VTKpipeline(object):
     def pvOFBase(self):
         return self._pvOFBase
 
-    def __init__(self, name, metadata, pipelineJSON, caseName):
+    def __init__(self, name, pipelineJSON, caseName):
         """
             Initializes a VTK pipeline.
 
-        :param metadata:
-            JSON of the metadata.
         :param pipelineJSON:
             JSON of the pipeline.
         :param caseName: the name of the case on which the pipeline executes.
         """
         self._pvOFBase = pvOFBase()
         self._VTKpipelineJSON = pipelineJSON
-        self._Metadata = metadata
         self._name = name
 
-        outputdir = metadata.get("datadir", "None")
+        outputdir = pipelineJSON["metadata"].get("datadir", "None")
         if outputdir != "None":
             self._pvOFBase.hdfdir = os.path.join(outputdir, caseName, "hdf")
             self._pvOFBase.netcdfdir = os.path.join(outputdir, caseName, "netcdf")
@@ -107,7 +89,7 @@ class VTKpipeline(object):
         self._buildFilterLayer(father=reader, structureJson=self._VTKpipelineJSON, filterWrite=filterWrite)
 
         # Now execute the pipeline.
-        timelist = self._Metadata.get("timelist", "None")
+        timelist = self._VTKpipelineJSON["metadata"].get("timelist", "None")
         if (timelist == "None"):
             timelist = None
 
@@ -124,7 +106,7 @@ class VTKpipeline(object):
         # else just take it from the json (it should be a list).
 
         # Get the mesh regions.
-        if "MeshRegions" in self._Metadata:
+        if "MeshRegions" in self._VTKpipelineJSON["metadata"]:
             reader.MeshRegions = self._Metadata["MeshRegions"]
 
         for frmt, datasourceslist in filterWrite.items():
@@ -132,7 +114,7 @@ class VTKpipeline(object):
             if writer is None:
                 raise ValueError("The write %s is not found" % writer)
             writer(readername=source, datasourcenamelist=datasourceslist, timelist=timelist,
-                   fieldnames=self._Metadata.get('fields', None), outfile=self.name)
+                   fieldnames=self._VTKpipelineJSON["metadata"].get('fields', None), outfile=self.name)
 
     def _buildFilterLayer(self, father, structureJson, filterWrite):
         """
@@ -156,27 +138,26 @@ class VTKpipeline(object):
         if structureJson is None:
             return
 
-        for filterGuiName in structureJson:
-            # build the filter.
-            paramPairList = structureJson[filterGuiName]['params']  # must be a list to enforce order in setting.
-            filtertype = structureJson[filterGuiName]['type']
-            filter = getattr(pvsimple, filtertype)(Input=father, guiName=filterGuiName)
+        paramPairList = structureJson["pipeline"]['params']  # must be a list to enforce order in setting.
+        filtertype = structureJson["pipeline"]['type']
+        filterGuiName = structureJson["metadata"]["guiname"]
 
-            for param, pvalue in paramPairList:
-                pvalue = str(pvalue) if isinstance(pvalue, unicode) else pvalue  # python2, will be removed in python3.
-                paramnamelist = param.split(".")
-                paramobj = filter
-                for pname in paramnamelist[:-1]:
-                    paramobj = getattr(paramobj, pname)
-                setattr(paramobj, paramnamelist[-1], pvalue)
-            filter.UpdatePipeline()
+        filter = getattr(pvsimple, filtertype)(Input=father, guiName=filterGuiName)
+        for param, pvalue in paramPairList:
+            pvalue = str(pvalue) if isinstance(pvalue, unicode) else pvalue  # python2, will be removed in python3.
+            paramnamelist = param.split(".")
+            paramobj = filter
+            for pname in paramnamelist[:-1]:
+                paramobj = getattr(paramobj, pname)
+            setattr(paramobj, paramnamelist[-1], pvalue)
+        filter.UpdatePipeline()
+        writeformat = structureJson["pipeline"].get("write", None)
 
-            writeformat = structureJson[filterGuiName].get("write", None)
-            if (writeformat is not None) and (str(writeformat) != "None"):
-                filterlist = filterWrite.setdefault(writeformat, [])
-                filterlist.append(filterGuiName)
+        if (writeformat is not None) and (str(writeformat) != "None"):
+            filterlist = filterWrite.setdefault(writeformat, [])
+            filterlist.append(filterGuiName)
 
-            self._buildFilterLayer(filter, structureJson[filterGuiName].get("downstream", None), filterWrite)
+        self._buildFilterLayer(filter, structureJson["pipeline"].get("downstream", None), filterWrite)
 
 
 # ======================================================================================
