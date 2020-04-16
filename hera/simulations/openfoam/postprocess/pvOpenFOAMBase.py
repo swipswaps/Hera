@@ -211,6 +211,7 @@ class paraviewOpenFOAM(object):
                     curstep["%s%s" % (field, self._componentsNames[indxiter])] = arry[L]
                 except ValueError:
                     print("Field %s is problematic... ommiting" % field)
+        ########## adding height
 
 
         curstep = curstep.set_index(['time', 'x', 'y', 'z']).to_xarray() if xarray else curstep
