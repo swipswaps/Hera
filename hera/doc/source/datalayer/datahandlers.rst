@@ -1,5 +1,6 @@
+*************
 Data handlers
-==============
+*************
 
 Each record in the mongodb represents a single item of data. In order to
 simplify the loading procedure, we keep track of the data format (which is determined by the user when it is created).

@@ -1,7 +1,7 @@
-from .document import getDBObject, createDBConnection
+from .document import getDBObject, createDBConnection, getMongoConfigFromJson
 from .collection import AbstractCollection,Measurements_Collection,Simulations_Collection,Analysis_Collection
-from .projects import getProjectList
-from .projects import Projects
+from .project import getProjectList
+from .project import Project
 
 from .utils import dictToMongoQuery
 from .datahandler import datatypes

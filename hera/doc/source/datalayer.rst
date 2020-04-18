@@ -78,4 +78,6 @@ The getData method loads the data from the database accoding to the dataFormat.
     :maxdepth: 1
 
     datalayer/cli
-    datalayer/examples
+    datalayer/usage
+    datalayer/datahandlers
+    datalayer/api
