@@ -2,7 +2,6 @@ from mongoengine import *
 import json
 from ..datahandler import getHandler
 
-
 class MetadataFrame(object):
     projectName = StringField(required=True)
     desc = DictField(required=True)
@@ -18,7 +17,18 @@ class MetadataFrame(object):
         return docDict
 
     def getData(self, **kwargs):
-            return getHandler(self.dataFormat).getData(self.resource, **kwargs)
+        """
+            Returns the data of the document. 
+            
+            the kwargs passed to the datahandler. 
+            See the datahandler class for your specific datatype.  
+
+        :param kwargs: dict
+        
+        :return:
+            object according to the datahandler. 
+        """
+        return getHandler(self.dataFormat).getData(self.resource, **kwargs)
 
 
 class nonDBMetadata(object):
