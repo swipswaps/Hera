@@ -1,4 +1,4 @@
-#! /home/yehuda/anaconda3/bin/python
+#! /usr/bin/env python
 import argparse
 import textwrap
 import json
