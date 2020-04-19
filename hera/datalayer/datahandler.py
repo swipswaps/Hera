@@ -6,6 +6,16 @@ from json import JSONDecodeError
 import geopandas
 import matplotlib.image as mpimg
 
+class datatypes:
+    STRING = "string"
+    TIME   = "time"
+    HDF    = "hdf"
+    NETCDF_XARRAY = "netcdf_xarray"
+    JSON_DICT = "JSON_dict"
+    JSON_PANDAS = "JSON_pandas"
+    GEOPANDAS  = "geopandas"
+    PARQUET    =  "parquet"
+    IMAGE = "image"
 
 def getHandler(type):
     return globals()['DataHandler_%s' % type]
@@ -60,12 +70,12 @@ class DataHandler_HDF(object):
     @staticmethod
     def getData(resource, usePandas=False):
         """
-            Loads a key from a HDF file or files.
+        Loads a key from a HDF file or files.
 
-        :param resource: The directory of the parquet file.
-        :param usePandas: if True, compute the dask.
+        :param resource: A dictionary with path to the HDF file in the 'path' key, and HDF key in the 'key' key.
+        :param usePandas: if False use dask if False use pandas.
         :return:
-                dask dataframe or pandas.dataframe (if usePandas is true).
+                dask.DataFrame or pandas.DataFrame (if usePandas is true).
         """
         df = dask.dataframe.read_hdf(resource['path'], resource['key'], sorted_index=True)
 
@@ -75,21 +85,16 @@ class DataHandler_HDF(object):
         return df
 
 
-class DataHandler_dict(object):
-
-    @staticmethod
-    def getData(resource, usePandas=True):
-        df = pandas.DataFrame(resource)
-        if not usePandas:
-            df = dask.dataframe.from_pandas(df, npartitions=1)
-
-        return df
-
-
 class DataHandler_netcdf_xarray(object):
 
     @staticmethod
     def getData(resource):
+        """
+        Loads netcdf file into xarray.
+
+        :param resource: Path to the netcdf file.
+        :return: xarray
+        """
         df = xarray.open_mfdataset(resource, combine='by_coords')
 
         return df
@@ -99,11 +104,17 @@ class DataHandler_JSON_dict(object):
 
     @staticmethod
     def getData(resource):
+        """
+
+
+        :param resource: json string or json file
+        :return:
+        """
         try:
             df = json.loads(resource)
         except JSONDecodeError:
             with open(resource, 'r') as myFile:
-                df = json.read(myFile)
+                df = json.load(myFile)
 
         return df
 
@@ -138,7 +149,7 @@ class DataHandler_parquet(object):
         :param resource: The directory of the parquet file.
         :param usePandas: if True, compute the dask.
         :return:
-                dask dataframe or pandas.dataframe (if usePandas is true).
+                dask.Dataframe or pandas.DataFrame (if usePandas is true).
         """
         df = dask.dataframe.read_parquet(resource)
 
@@ -152,6 +163,13 @@ class DataHandler_image(object):
 
     @staticmethod
     def getData(resource):
+        """
+        Loads an image using the resource.
+
+        :param resource: The path of the image.
+        :return:
+            img
+        """
         img = mpimg.imread(resource)
 
         return img
