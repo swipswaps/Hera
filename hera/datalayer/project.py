@@ -121,7 +121,7 @@ class Project(object):
 
         for fclass,(func,funcName) in product(func_class,zip(funcList,funcListName)):
             func_class_obj = getattr(self,fclass)
-            partial_func = partial(func,self=self,obj=func_class_obj)
+            partial_func = partial(func,self,func_class_obj)
 
             setattr(self,funcName.format(func=fclass.title()),partial_func)
 

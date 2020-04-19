@@ -40,7 +40,7 @@ In order to organize the data, the library is comprised of 4 parts.
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
    datalayer
