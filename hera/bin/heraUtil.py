@@ -26,7 +26,7 @@ if args.dump:
                 parser.error("Must use --projectName with --dump")
             elif args.type is None:
                 parser.error("Must use --type when using --projectName with --dump")
-            elif args.type not in ['Measurements', 'Simulations', 'Analysis', 'Projects']:
+            elif args.type not in ['Measurements', 'Simulations', 'Analysis']:
                 parser.error("--type must get one of the following values: 'Measurements', 'Simulations', 'Analysis'")
             else:
                 with open(args.outputFile, 'w') as myFile:
