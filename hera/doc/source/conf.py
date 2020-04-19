@@ -19,7 +19,7 @@
 
 project = 'pyhera'
 copyright = '2019, Eden'
-author = 'Eden'
+author = 'Eden Nitsan, Yehuda Arav, Ofir Blumer, David Giguzin'
 
 # The full version, including alpha/beta/rc tags
 release = '0.0.1'
@@ -46,7 +46,8 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'pandas_sphinx_theme'
+html_theme = 'alabaster'
+#'pydata-sphinx-theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

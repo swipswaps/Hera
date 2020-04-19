@@ -69,14 +69,33 @@ class AbstractCollection(object):
         """
         return self._metadataCol.objects.get(id=id)
 
-    def addDocument(self, **kwargs):
-        if 'desc__type' in kwargs or ('desc' in kwargs and 'type' in kwargs['desc']):
-            raise KeyError("'type' key can't be in the desc")
+    def addDocument(self,projectName,resource="",dataFormat="string",type="",desc={}):
+        """
+            Adds a document to the database.
+
+
+        :param projectName: str
+                The project to add the document
+        :param resource:
+                The data of the document.
+        :param dataFormat: str
+                The type of the dataformat.
+                See datahandler for the available types.
+
+        :param desc: dict
+                Holds any additional fields that describe the
+        :param type:
+
+        :param kwargs:
+        :return:
+            mongoDB.documents.
+        """
         try:
-            self._metadataCol(**kwargs).save()
-        except ValidationError:
+            obj = self._metadataCol(projectName=projectName,resource=resource,dataFormat=dataFormat,type=type,desc=desc).save()
+        except ValidationError as e:
             raise ValidationError("Not all of the required fields are delivered "
-                                  "or one of the fields type is not proper.")
+                                  "or one of the fields type is not proper. %s " % str(e))
+        return obj
 
     def addDocumentFromJSON(self, json_data):
         self._metadataCol.from_json(json_data).save()
@@ -104,6 +123,8 @@ class AbstractCollection(object):
     def getData(self, projectName, usePandas=None, **kwargs):
         """
         Returns the data by the given parameters.
+
+        This is obeselete. Use getDocuments and the get the data from the desired document.
 
         :param projectName: The name of the project.
         :param usePandas: Return the data as pandas if True, dask if False. Default is None, and returns the data depends on the data format.
