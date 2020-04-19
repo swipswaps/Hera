@@ -6,6 +6,16 @@ from json import JSONDecodeError
 import geopandas
 import matplotlib.image as mpimg
 
+class datatypes:
+    STRING = "string"
+    TIME   = "time"
+    HDF    = "hdf"
+    NETCDF_XARRAY = "netcdf_xarray"
+    JSON_DICT = "JSON_dict"
+    JSON_PANDAS = "JSON_pandas"
+    GEOPANDAS  = "geopandas"
+    PARQUET    =  "parquet"
+    IMAGE = "image"
 
 def getHandler(type):
     return globals()['DataHandler_%s' % type]
@@ -65,7 +75,7 @@ class DataHandler_HDF(object):
         :param resource: A dictionary with path to the HDF file in the 'path' key, and HDF key in the 'key' key.
         :param usePandas: if False use dask if False use pandas.
         :return:
-                dask dataframe or pandas.dataframe (if usePandas is true).
+                dask.DataFrame or pandas.DataFrame (if usePandas is true).
         """
         df = dask.dataframe.read_hdf(resource['path'], resource['key'], sorted_index=True)
 
@@ -139,7 +149,7 @@ class DataHandler_parquet(object):
         :param resource: The directory of the parquet file.
         :param usePandas: if True, compute the dask.
         :return:
-                dask dataframe or pandas.dataframe (if usePandas is true).
+                dask.Dataframe or pandas.DataFrame (if usePandas is true).
         """
         df = dask.dataframe.read_parquet(resource)
 
@@ -157,7 +167,8 @@ class DataHandler_image(object):
         Loads an image using the resource.
 
         :param resource: The path of the image.
-        :return: img
+        :return:
+            img
         """
         img = mpimg.imread(resource)
 
