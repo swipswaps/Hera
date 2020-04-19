@@ -15,6 +15,7 @@ Welcome to pyhera's documentation!
    simulations
    instructions_for_dev
    how_to
+   auto_examples/index
 
 
 Indices and tables

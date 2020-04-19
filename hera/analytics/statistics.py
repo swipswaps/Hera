@@ -1,37 +1,44 @@
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 
-def calcDist2d(data, x, y, bins, normalization="max_normalized"):
+def calcDist2d(x, y, data=None, bins=20, normalization="max_normalized"):
     """
-    Calculates the mean of u,v,w,T and the fluctuations u',v',w',T'.
+    Calculates the distribution of two dimensional data.
 
     Parameters
     ----------
-    data : Pandas of th data.
+    data : Pandas of the data.
     x: str or numpy array or series
     y: str or numpy array or series
     bins: number of bins for hist2d.
-    normalization:  Normalize method to make 1 the maximum value.
-                    density or y_normalized or max_normalized
+    normalization:  the normalization method: density or y_normalized or max_normalized
 
-    :return:
-        Default value is None.
+        max_normalized - normalize the data by the maximal value of the histogram to make 1 the maximum value.
+        y_normalized - normalize the data by group of x values to make the data proportional to the rest of the group values.
+        density- ???
 
 
     Returns
     -------
-    TurbulenceCalculator
-        The object himself.
+    x_mid- The bin center along the x axis
+    , y_mid-The bin center along the y axis
+     M.T- transpose of the 2D histogram
     """
 
     tmpfig = plt.figure()
-    if data is None:
-        xdata = x;
-        ydata = y
-    else:
+
+
+    if data is not None:
+
         xdata = data[x];
         ydata = data[y]
+
+    else:
+        xdata = x;
+        ydata = y;
+
 
     M, x_vals, y_vals, _ = plt.hist2d(xdata, ydata, bins=bins)
     plt.close(tmpfig)
@@ -39,8 +46,6 @@ def calcDist2d(data, x, y, bins, normalization="max_normalized"):
     if normalization == "density":
         square_area = (x_vals[1] - x_vals[0]) * (y_vals[1] - y_vals[0])
         M = M / square_area
-        y_normalized = False;
-        max_normalized = False
 
     elif normalization == "y_normalized":
         M = M / M.sum(axis=1)[:, None]
