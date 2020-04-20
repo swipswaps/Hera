@@ -152,7 +152,7 @@ class AbstractCollection(object):
         -------
 
         """
-        for doc in self.getDocuments(projectName=projectName, **kwargs):
+        for doc in self.getDocuments(projectName=projectName, **query):
             doc.delete()
 
     def deleteDocumentByID(self, id):
