@@ -1,4 +1,4 @@
-#! /home/yehuda/anaconda3/bin/python
+#! /usr/bin/env python
 import argparse
 import textwrap
 import json
@@ -23,29 +23,51 @@ commands = ["list","load","delete","copyTo","copyFrom"]
 def help_list_handler(args):
     wrapper = textwrap.TextWrapper(width=80)
     print("list the documents in the project")
-    print("\tprojectname [mongodb query]")
+    print("\thera-datalayer list [projectname] <query 1> <query 2>...<query N>")
 
 def help_handler(arguments):
-    if arguments[0] in commands:
+    printGeneralHelp = False
+    if len(arguments) == 0:
+        printGeneralHelp = True
+    elif arguments[0] in commands:
         globals()['help_%s_handler' % arguments[0]](args.args)
     else:
+        printGeneralHelp = True
+
+    if printGeneralHelp:
         print("The available commands are:")
         print("---------------------------")
         helpcommand = ["\tlist \t\tlist all the documents of the query",
                        "\tload \t\tload a file to the db",
                        "\tdelete \t\tdelete records from the db",
                        "\tcopyTo \t\tcopy records from user DB to a destination DB",
-                       "\tcopyFrom \tcopy records from destinations to current user DB"]
+                       "\tcopyFrom \tcopy records from destinations to current user DB"
+                       "\tcount    \tcount the number of records"]
         output = "\n".join(helpcommand)
         print(output)
 
 
 def list_handler(arguments):
     fullQuery={}
-    for queryElement in arguments:
+    startIndex = 0
+    if "=" not in arguments[0]:
+        fullQuery['projectName']=arguments[0]
+        startIndex = 1
+    for queryElement in arguments[startIndex:]:
         fullQuery[queryElement.split('=')[0]] = eval(queryElement.split('=')[1])
-    for doc in datalayer.Measurements.getDocuments(**fullQuery):
+    for doc in datalayer.All.getDocuments(**fullQuery):
         print(doc.asDict())
+
+def count_handler(arguments):
+    fullQuery={}
+    startIndex = 0
+    if "=" not in arguments[0]:
+        fullQuery['projectName']=arguments[0]
+        startIndex = 1
+    for queryElement in arguments[startIndex:]:
+        fullQuery[queryElement.split('=')[0]] = eval(queryElement.split('=')[1])
+
+    print("The total number of documents is %s" % len(datalayer.All.getDocuments(**fullQuery)))
 
 
 def load_handler(arguments):
