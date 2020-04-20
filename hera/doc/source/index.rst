@@ -48,6 +48,7 @@ In order to organize the data, the library is comprised of 4 parts.
    simulations
    instructions_for_dev
    how_to
+   auto_examples/index
 
 
 Indices and tables
