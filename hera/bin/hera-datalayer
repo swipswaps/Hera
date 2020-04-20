@@ -17,6 +17,24 @@ args = parser.parse_args()
 
 commands = ["list","load","delete","copyTo","copyFrom"]
 
+
+def _parseConnectionString(constr):
+    """
+        Parses a mongodb connection string and returns a dict
+
+        The structure of the connection string is:
+
+        username:password@IP/dbname
+
+    :param constr: str. The connection string.
+    :return:
+    dict
+    """
+    return dict(username=constr.split(':')[0],
+                       password=constr.split(':')[1].split('@')[0],
+                       dbIP=constr.split(':')[1].split('@')[1].split('/')[0],
+                       dbName=constr.split(':')[1].split('@')[1].split('/')[1]
+                       )
 ###
 ##
 #
@@ -89,8 +107,13 @@ def delete_handler(arguments):
                 getattr(datalayer, cls).deleteDocumentByID(id=id)
     except FileNotFoundError:
         fullQuery = {}
-        for queryElement in arguments:
+        startIndex = 0
+        if "=" not in arguments[0]:
+            fullQuery['projectName'] = arguments[0]
+            startIndex = 1
+        for queryElement in arguments[startIndex:]:
             fullQuery[queryElement.split('=')[0]] = eval(queryElement.split('=')[1])
+
         docsToDelete = {}
         with open('docsToDelete.json', 'w') as myFile:
             docsToDelete['Measurements'] = datalayer.Measurements.getDocumentsAsDict(**fullQuery, with_id=True)['documents']
@@ -101,11 +124,7 @@ def delete_handler(arguments):
 
 def copyTo_handler(arguments):
     info = arguments[0]
-    mongoConfig = dict(username=info.split(':')[0],
-                       password=info.split(':')[1].split('@')[0],
-                       dbIP=info.split(':')[1].split('@')[1].split('/')[0],
-                       dbName=info.split(':')[1].split('@')[1].split('/')[1]
-                       )
+    mongoConfig = _parseConnectionString(info)
 
     datalayer.createDBConnection('other', mongoConfig=mongoConfig)
 
@@ -121,11 +140,7 @@ def copyTo_handler(arguments):
 
 def copyFrom_handler(arguments):
     info = arguments[0]
-    mongoConfig = dict(username=info.split(':')[0],
-                       password=info.split(':')[1].split('@')[0],
-                       dbIP=info.split(':')[1].split('@')[1].split('/')[0],
-                       dbName=info.split(':')[1].split('@')[1].split('/')[1]
-                       )
+    mongoConfig = _parseConnectionString(info)
 
     datalayer.createDBConnection('other', mongoConfig=mongoConfig)
 
