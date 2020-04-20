@@ -35,7 +35,7 @@ def help_handler(arguments):
                        "\tload \t\tload a file to the db",
                        "\tdelete \t\tdelete records from the db",
                        "\tcopyTo \t\tcopy records from user DB to a destination DB",
-                       "\tcopyFrom \tcopy records from destinations to current user DB"]
+                       "\tcopyFrom \tcopy records from destination to current user DB"]
         output = "\n".join(helpcommand)
         print(output)
 
@@ -93,8 +93,9 @@ def copyTo_handler(arguments):
 
     docList = datalayer.All.getDocuments(**fullQuery)
     for doc in docList:
-        cls = doc['_cls'].split('.')[1]
-        getattr(datalayer, '%s_Collection' % cls)(user='other').addDocument(**doc.asDict())
+        docDict = doc.asDict()
+        cls = docDict.pop('_cls').split('.')[1]
+        getattr(datalayer, '%s_Collection' % cls)(user='other').addDocument(**docDict)
 
 
 def copyFrom_handler(arguments):
@@ -113,8 +114,9 @@ def copyFrom_handler(arguments):
 
     docList = datalayer.AbstractCollection(user='other').getDocuments(**fullQuery)
     for doc in docList:
-        cls = doc['_cls'].split('.')[1]
-        getattr(datalayer, cls).addDocument(**doc.asDict())
+        docDict = doc.asDict
+        cls = docDict.pop('_cls').split('.')[1]
+        getattr(datalayer, cls).addDocument(**docDict)
 
 
 globals()['%s_handler' % args.command[0]](args.args)
