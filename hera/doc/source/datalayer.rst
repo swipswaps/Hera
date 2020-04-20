@@ -1,5 +1,5 @@
 datalayer
-===========
+=========
 
 The data the that is produced in by the measurements or the simulation might be large
 and therefore we usually store the data on the disk
@@ -16,13 +16,14 @@ a different database.
 The datalayer also includes a command line interface to load, remove and move data around.
 
 
+
 10-minute tutorial
 ------------------
 
 This tutorial demonstrate how to store and retrieve data from the database.
 
-Adding new document to the Metadata collection:
-*************************
+Adding Data
+***********
 
 first, import the requested module:
 
@@ -74,8 +75,11 @@ For example, we took the first document from our docList and got its data.
 
 The getData method loads the data from the database accoding to the dataFormat.
 
+Usage
+-----
+
 .. toctree::
-    :maxdepth: 1
+    :maxdepth: 2
 
     datalayer/cli
     datalayer/usage
