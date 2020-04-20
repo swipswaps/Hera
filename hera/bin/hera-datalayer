@@ -86,7 +86,9 @@ def count_handler(arguments):
         fullQuery[queryElement.split('=')[0]] = eval(queryElement.split('=')[1])
 
     print("The total number of documents is %s" % len(datalayer.All.getDocuments(**fullQuery)))
-
+    print("\t Measurement documents: %s " % len(datalayer.Measurements.getDocuments(**fullQuery)) )
+    print("\t Simulation documents: %s " % len(datalayer.Simulations.getDocuments(**fullQuery)))
+    print("\t Analysis documents: %s " % len(datalayer.Analysis.getDocuments(**fullQuery)))
 
 def load_handler(arguments):
     with open(arguments[0], 'r') as myFile:
