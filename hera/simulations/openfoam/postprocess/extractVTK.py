@@ -194,4 +194,4 @@ class VTKpipeline(object):
     # with open('test.json') as json_file:
     #     data = json.load(json_file)
     # vtkpipe = VTKpipeline(name="test", pipelineJSON=data, casePath="/home/ofir/Projects/openFoamUsage/askervein", caseType="Reconstructed Case")
-
+    # vtkpipe.execute("mainReader")
