@@ -30,8 +30,8 @@ def help_list_handler():
             "\tPrint all the documents that fulfill the given query.",
             "\tThe query is given in the [<query>] arguments.\n",
             "\033[1mQUERY\033[0m",
-            "\tThe query is a set of conditions to search documents over the database.\n",
-            "\tA query argument should be as following:",
+            "\tThe query is a set of conditions used to search documents over the database.\n",
+            "\tA query argument should be in the following format:",
             '''\t    variable="'value'"\n''',
             "\033[1mEXAMPLE\033[0m",
             '''\t\033[1mhera-datalayer list projectName="'example'"\033[0m''',
@@ -55,7 +55,7 @@ def help_load_handler():
                 "Analysis":[list of analysis documents]
             }\n''',
             "\033[1mEXAMPLE\033[0m",
-            '''\t\033[1mhera-datalayer load docsToLoad.json\033[0m''',
+            "\t\033[1mhera-datalayer load docsToLoad.json\033[0m",
             "\t    This example should load to the database the documents found in the file called 'docsToLoad.json'"
             ]
     print('\n'.join(help))
@@ -66,20 +66,73 @@ def help_delete_handler():
             "\033[1mSYNOPSYS\033[0m",
             "\t\033[4mhera-datalayer\033[0m \033[4mdelete\033[0m [<query>]/<file>\n",
             "\033[1mDESCRIPTION\033[0m",
-            "\tDelete from the database all the documents that fulfill the given query.",
-            "\tThe delete process is made by 2 parts:"
-            "    "# I stopped here - need to complete
+            "\tDelete from the database all the documents that fulfill the given query.\n",
+            "\tThe delete process is made by 2 parts:",
+            "\t    \033[4m1\033[0m. Query the documents that you want to delete and they will be saved into a JSON file called docsToDelete.json",
+            "\t    \033[4m2\033[0m. Delete The documents in the file docsToDelete.json\n",
             "\033[1mEXAMPLE\033[0m",
-            '''\t\033[1mhera-datalayer load docsToLoad.json\033[0m''',
-            "\t    This example should load to the database the documents found in the file called 'docsToLoad.json'"
+            '''\t\033[4m1\033[0m. \033[1mhera-datalayer delete projectName="'example'"\033[0m''',
+            "\t    This example should save all the documents of a project called 'example' into a JSON file called 'docsToDelete.json'\n",
+            "\t\033[4m2\033[0m. \033[1mhera-datalayer delete docsToDelete.json\033[0m",
+            "\t    This example should delete the documents found in a JSON file called 'docsToDelete.json'"
             ]
     print('\n'.join(help))
 
 def help_copyTo_handler():
-    pass
+    help = ["\033[1mNAME\033[0m",
+            "\tcopyTo - Copy documents from the current user database to the destination database\n",
+            "\033[1mSYNOPSYS\033[0m",
+            "\t\033[4mhera-datalayer\033[0m \033[4mcopyTo\033[0m <connection string> [<query>]\n",
+            "\033[1mDESCRIPTION\033[0m",
+            "\tLoad all the documents that fulfill the given query from the current user database to the destination database.",
+            "\tThe information to connect to the destination database is given in the <connection string> argument.\n"
+            "\tThe query is given in the [<query>] arguments.\n",
+            "\033[1mCONNECTION STRING\033[0m",
+            "\tThe connection string is used to connect to the destination database and should be in the following format:",
+            "\t   username:password@dbIP/dbName\n",
+            "\tusername - The username of a user with permissions to the destination database",
+            "\tpassword - The password of a user with permissions to the destination database",
+            "\tdbIP - The IP of the server that contains the destination database",
+            "\tdbName - The name of the destination database\n",
+            "\033[1mQUERY\033[0m",
+            "\tThe query is a set of conditions used to search documents over the database.\n",
+            "\tA query argument should be in the following format:",
+            '''\t    variable="'value'"\n''',
+            "\033[1mEXAMPLE\033[0m",
+            '''\t\033[1mhera-datalayer copyTo user:pass@1.1.1.1/name projectName="'example'"\033[0m''',
+            "\t    This example should copy all the documents of a project called 'example' from the current user database to the destination database.",
+            "\t    The destination database in this example is called 'name' and contained in a server with IP 1.1.1.1",
+            "\t    A user with username='user' and password='pass' has permissions to the destination database"
+            ]
+    print('\n'.join(help))
 
 def help_copyFrom_handler():
-    pass
+    help = ["\033[1mNAME\033[0m",
+            "\tcopyFrom - Copy documents from the destination database to the current user database\n",
+            "\033[1mSYNOPSYS\033[0m",
+            "\t\033[4mhera-datalayer\033[0m \033[4mcopyTo\033[0m <connection string> [<query>]\n",
+            "\033[1mDESCRIPTION\033[0m",
+            "\tLoad all the documents that fulfill the given query from the destination database to the current user database.",
+            "\tThe information to connect to the destination database is given in the <connection string> argument.\n"
+            "\tThe query is given in the [<query>] arguments.\n",
+            "\033[1mCONNECTION STRING\033[0m",
+            "\tThe connection string is used to connect to the destination database and should be in the following format:",
+            "\t   username:password@dbIP/dbName\n",
+            "\tusername - The username of a user with permissions to the destination database",
+            "\tpassword - The password of a user with permissions to the destination database",
+            "\tdbIP - The IP of the server that contains the destination database",
+            "\tdbName - The name of the destination database\n",
+            "\033[1mQUERY\033[0m",
+            "\tThe query is a set of conditions used to search documents over the database.\n",
+            "\tA query argument should be in the following format:",
+            '''\t    variable="'value'"\n''',
+            "\033[1mEXAMPLE\033[0m",
+            '''\t\033[1mhera-datalayer copyFrom user:pass@1.1.1.1/name projectName="'example'"\033[0m''',
+            "\t    This example should copy all the documents of a project called 'example' from the destination database to the current user database.",
+            "\t    The destination database in this example is called 'name' and contained in a server with IP 1.1.1.1",
+            "\t    A user with username='user' and password='pass' has permissions to the destination database"
+            ]
+    print('\n'.join(help))
 
 def help_handler(arguments):
     if not arguments:
