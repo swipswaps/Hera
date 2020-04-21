@@ -24,7 +24,7 @@ path = parser.parse_args().path[0]
 name = parser.parse_args().name[0]
 projectName = parser.parse_args().projectName[0]
 
-keys = pandas.HDFStore("%s/hdf/%s_0.hdf" % (path, name)).keys()
+keys = pandas.HDFStore("%s/%s/hdf/%s_0.hdf" % (path, name, name)).keys()
 fixed_keys = []
 for key in keys:
     if key[0]=="/":
@@ -32,11 +32,11 @@ for key in keys:
     else:
         fixed_keys.append(key)
 
-if not os.path.isdir("%s/parquet" % path):
-    os.makedirs("%s/parquet" % path)
+if not os.path.isdir("%s/%s/parquet" % (path, name)):
+    os.makedirs("%s/%s/parquet" % (path, name))
 
 
-jsondata = pandas.read_json("%s/meta.json" % path)
+jsondata = pandas.read_json("%s/%s/meta.json" % (path, name))
 metadata = jsondata["metadata"].dropna().to_dict() # Reading the metadata
 
 # Making a list of the pipeline filter names
@@ -53,11 +53,11 @@ makepipeline(jsondata["pipeline"])
 # Making the parquet files
 
 for key in fixed_keys:
-    data = dd.read_hdf("%s/hdf/%s_0.hdf" % (path, name), key=key)
-    for i in range(1, len([name for name in os.listdir('%s/hdf' % path) if os.path.isfile(os.path.join('%s/hdf' % path, name))])):
-        new_data = dd.read_hdf("%s/hdf/%s_%s.hdf" % (path, name, (i)), key=key)
+    data = dd.read_hdf("%s/%s/%s_0.hdf" % (path, name, name), key=key)
+    for i in range(1, len([name for name in os.listdir('%s/%s/hdf' % (path, name)) if os.path.isfile(os.path.join('%s/%s/hdf' % (path, name), name))])):
+        new_data = dd.read_hdf("%s/%s/hdf/%s_%s.hdf" % (path, name, name, (i)), key=key)
         data = dd.concat([data, new_data],interleave_partitions=True).reset_index().set_index("time").repartition(partition_size="100Mb")
-    data.to_parquet("%s/parquet/%s.parquet" % (path, key))
+    data.to_parquet("%s/%s/parquet/%s.parquet" % (path, name, key))
 
     # Finding the history of the filter
 
@@ -67,11 +67,11 @@ for key in fixed_keys:
     # Adding a link to the parquet to the database
 
     datalayer.Measurements.addDocument(projectName=projectName, desc=metadata, type="OFsimulation", filter=key, pipeline=pipelinestr,
-                                       resource="%s/parquet/%s.parquet" % (path, key), dataFormat="parquet")
+                                       resource="%s/%s/parquet/%s.parquet" % (path, name, key), dataFormat="parquet")
 
 #   Delete hdf directory
 if parser.parse_args().keepHDF:
-    shutil.rmtree("%s/hdf" % path, ignore_errors=True)
-    shutil.rmtree("%s/meta.json" % path, ignore_errors=True)
+    shutil.rmtree("%s/%s/hdf" % (path, name), ignore_errors=True)
+    shutil.rmtree("%s/%s/meta.json" % (path, name), ignore_errors=True)
 
 
