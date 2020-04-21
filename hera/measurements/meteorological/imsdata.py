@@ -4,14 +4,18 @@ import numpy
 import dask.dataframe as dd
 import os
 import shutil
+import matplotlib.pyplot as plt
+import seaborn
+from itertools import product
+seaborn.set()
+
 
 from ... import datalayer
 from ... utils import andClause
 from ... analytics import statistics
 
-
-
-
+from hera.measurements.meteorological.analytics.statistics import calcHourlyDist
+from hera.measurements import meteorological
 
 class DataLoader(object):
 
@@ -22,6 +26,11 @@ class DataLoader(object):
 
     """
     def __init__(self, np_size=None):
+        """
+
+        :param np_size:
+        """
+
         """
             Initializes the object.
             sets the map fot the hebrew fields.
@@ -172,7 +181,7 @@ class DataLoader(object):
         loaded_dask = dd.from_pandas(tmppandas_q, npartitions=npartitions)
         return loaded_dask
 
-        vals = {}
+        vals = dict()
         if metadatafile:
 
 
@@ -217,7 +226,7 @@ class DataLoader(object):
         :return:
         """
 
-        metadata.update({'DataSource':DataSource})
+        metadata.update(dict(DataSource=DataSource))
         # 1- load the data
 
         loaded_dask,stations=self.getFromDir(newdata_path, time_coloumn)
@@ -325,29 +334,29 @@ class DataLoader(object):
 
     def _CreateMD(self,metadatafile,stnname,**metadata):
 
-        colums_dict={'BP':'Barometric pressure[hPa]',
-                    'DiffR':'Scattered radiation[W/m^2]',
-                    'Grad':'Global radiation[W/m^2]',
-                    'NIP':'Direct radiation[W/m^2]',
-                    'RH':'Relative Humidity[%]',
-                    'Rain':'Accumulated rain[mm/10minutes]',
-                    'STDwd':'Wind direction standard deviation[degrees]',
-                    'TD':'Average temperature in 10 minutes[c]',
-                    'TDmax':'Maximum temperature in 10 minutes[c]',
-                    'TDmin':'Minimum temperature in 10 minutes[c]',
-                    'TG':'Average near ground temperature in 10 minutes[c]',
-                    'Time':"End time of maximum 10 minutes wind running average[hhmm], see 'Ws10mm'",
-                    'WD':'Wind direction[degrees]',
-                    'WDmax':'Wind direction of maximal gust[degrees]',
-                    'WS':'Wind speed[m/s]',
-                    'WS1mm':'Maximum 1 minute average Wind speed[m/s]',
-                    'WSmax':'Maximal gust speed[m/s]',
-                    'Ws10mm':"Maximum 10 minutes wind running average[m/s], see 'Time''",}
+        colums_dict=dict(BP='Barometric pressure[hPa]',
+                         DiffR='Scattered radiation[W/m^2]',
+                         Grad='Global radiation[W/m^2]',
+                         NIP='Direct radiation[W/m^2]',
+                         RH='Relative Humidity[%]',
+                         Rain='Accumulated rain[mm/10minutes]',
+                         STDwd='Wind direction standard deviation[degrees]',
+                         TD='Average temperature in 10 minutes[c]',
+                         TDmax='Maximum temperature in 10 minutes[c]',
+                         TDmin='Minimum temperature in 10 minutes[c]',
+                         TG='Average near ground temperature in 10 minutes[c]',
+                         Time="End time of maximum 10 minutes wind running average[hhmm], see 'Ws10mm'",
+                         WD='Wind direction[degrees]',
+                         WDmax='Wind direction of maximal gust[degrees]',
+                         WS='Wind speed[m/s]',
+                         WS1mm='Maximum 1 minute average Wind speed[m/s]',
+                         WSmax='Maximal gust speed[m/s]',
+                         Ws10mm="Maximum 10 minutes wind running average[m/s], see 'Time''")
 
-        colums_dict.update({"StationName":stnname})
+        colums_dict.update(dict(StationName=stnname))
 
 
-        vals = {}
+        vals = dict()
 
         if metadatafile:
 
@@ -374,7 +383,6 @@ class DataLoader(object):
         return vals
 
 
-        pass
 
     def _getFromWeb(self):
         """
@@ -395,14 +403,13 @@ def getDocFromFile(path,time_coloumn='time_obs',**kwargs):
     return datalayer.document.metadataDocument.nonDBMetadata(loaded_dask,**kwargs)
 
 
-
 def getDocFromDB(projectName,type='meteorological',DataSource='IMS',StationName=None,**kwargs):
     """
     Reads the data from the database
     :return:
     """
 
-    desc={}
+    desc=dict()
     desc.update(kwargs)
     if StationName is not None:
         desc.update(StationName=StationName)
@@ -413,6 +420,388 @@ def getDocFromDB(projectName,type='meteorological',DataSource='IMS',StationName=
                                                   **desc
                                                  )
     return docList
+
+
+class plots(object):
+
+    pass
+
+class SeasonalPlots(plots):
+
+    def __init__(self):
+
+        self.seasonsdict=dict(Winter=dict(monthes=[12,1,2],strmonthes='[DJF]'),
+                              Spring=dict(monthes=[3,4,5],strmonthes='[MAM]'),
+                              Summer=dict(monthes=[6,7,8],strmonthes='[JJA]'),
+                              Autumn=dict(monthes=[9,10,11],strmonthes='[SOM]')
+                              )
+
+    def plotProbContourf_bySeason(self, data, plotField, levels = None, scatter = True, withLabels = True, colorbar=True,
+                                  ax=None,scatter_properties = dict(),contour_values = dict(),contour_properties = dict(),
+                                  contourf_properties = dict(), labels_properties = dict(), ax_properties = dict(),
+                                  normalization = 'max_normalized', figsize=[15, 10]):
+
+
+        """
+        applying plotProbContourf by season. see plotProbContourf for full documentation
+
+        Parameters
+        ----------
+
+        data : dask or pandas dataframe
+        plotField : the data column name to plot
+        levels : list, optional.
+        scatter : boolean. default is True
+        withLabels : boolean. default is True
+        colorbar : boolean. default is True
+        ax : optional
+        scatter_properties: dict, optional
+        contour_values: dict, optional
+        contour_properties: dict, optional
+        contourf_properties:dict, optional
+        labels_properties:dict, optional
+        ax_properties:dict, optional
+        normalization:string, default 'max_normalized'
+        figsize: list, default is [15,10]
+
+        returns
+        -------
+        ax :
+        """
+
+        if ax is None:
+            fig, ax = plt.subplots(2,2,figsize=figsize)
+        else:
+            plt.sca(ax)
+
+        curdata=data
+        curdata = curdata.assign(curdate=curdata.index)
+        curdata = curdata.assign(monthonly=curdata.curdate.dt.month)
+
+        axPositionList = [x for x in product(range(ax.shape[0]), range(ax.shape[1]))]
+
+        for axPosition, season in zip(axPositionList, self.seasonsdict):
+            qstring = 'monthonly in %s' % self.seasonsdict.get(season)['monthes']
+            seasondata=curdata.query(qstring)
+
+            CS,CSF,ax_i=meteorological.dailyplots.plotProbContourf(seasondata, plotField, ax=ax[axPosition[0], axPosition[1]],
+                                                                   colorbar=False, levels = levels, scatter = scatter, withLabels = withLabels,
+                                                                   scatter_properties = scatter_properties, contour_values = contour_values,
+                                                                   contour_properties = contour_properties, contourf_properties = contourf_properties,
+                                                                   labels_properties = labels_properties,
+                                                                   ax_functions_properties= ax_properties, normalization = normalization)
+
+            ax_i.set_title('%s %s' %(season,self.seasonsdict.get(season)['strmonthes']))
+
+        plt.tight_layout(rect=[0, 0, 1, 0.95])
+        if colorbar==True:
+            plt.colorbar(ax=ax,ticks=CSF.levels)
+
+        return ax
+
+
+
+class DailyPlots(object):
+
+
+    def __init__(self):
+
+        self.contourvalsdict=dict(under_value=0.1,
+                                  contourskip=2,
+                                  contourfnum=10,
+                                  max_value=1.0
+                                  )
+
+        self.axfuncdict=dict(set_xlim= [0, 24],
+                             set_xticks=[x for x in range(0,25)],
+                             set_xticklabels= [str(x) if x % 2 == 0 else "" for x in range(0, 25)],
+                             set_xlabel= 'Time [Hours]'
+                             )
+
+        self.plotfieldaxfuncdict=dict(WD=dict(set_ylim=[0, 360],
+                                              set_yticks=[x for x in range(0, 361, 30)],
+                                              set_ylabel= 'Wind Direction [° from N]'
+                                              ),
+                                      WS=dict(set_ylim=[0,20],
+                                          set_ylabel='Wind Speed [m/s]',
+                                          set_yticks= [x for x in range(0, 21, 4)],
+                                          set_yticklabels= [str(x) if x % 2 == 0 else "" for x in range(0, 21,4)]
+                                          ),
+                                      RH=dict(set_ylim=[0,100],
+                                          set_yticks= [x for x in range(0, 101,5)],
+                                          set_yticklabels= [str(x) if x % 10 == 0 else "" for x in range(0, 101,5)],
+                                          set_ylabel= 'Relative Humidity [%]')
+                                      )
+
+
+        self.scatterdict=dict(zorder=1,
+                              color='k',
+                              marker='.',
+                              size=0.5,
+                              edgecolors='k',
+                              alpha=0.55,
+                              legend=False
+                              )
+
+        self.labelsdict=dict(levels= numpy.round(numpy.linspace(self.contourvalsdict['under_value'],
+                                                                self.contourvalsdict['max_value'],
+                                                                self.contourvalsdict['contourfnum']), 2)[::self.contourvalsdict['contourskip']],
+                             inline=True,
+                             fontsize=8,
+                             fmt='%1.2f'
+                             )
+
+
+    def _getCountourDict(self, params):
+
+        """
+        Make a dictionary with the properties for contour plot
+        :param params: parametes from the user
+        :return: dict
+        """
+
+        return dict(zorder=3,
+                    levels=numpy.round(numpy.linspace(params['under_value'],
+                                                      params['max_value'],
+                                                      params['contourfnum']), 2)[::self.contourvalsdict['contourskip']],
+                    linewidths=0.5,
+                    colors='k')
+
+    def _getContourfDict(self, params):
+
+        """
+        Make a dictionary with the properties for contourf plot
+
+        :param params: parametes from the user
+        :return: dict
+        """
+
+        return  dict(zorder=2,
+                     cmap=self._getcmap('jet',under=True,undercolor='0.9',over=False,overcolor=None,alpha=0.05),
+                     levels=numpy.round(numpy.linspace(params['under_value'],
+                                                       params['max_value'],
+                                                       params['contourfnum']), 2),
+                     extend='min'
+                     )
+
+    def _getcmap(self,name,under=False,undercolor='0.9',over=False,overcolor='0.9',alpha=0.05):
+
+        """
+        Creates a colormap object with under/over range properties
+
+        Parameters
+        ----------
+
+        name: string.
+        The name of requested colormap (for ex: 'jet')
+        under: boolean, default False.
+         Whether or not to set a low out-of-range color
+        undercolor: String.
+         The requested under color name
+        over: boolean, default False.
+         Whether or not to set a high out-of-range color
+        overcolor: String.
+         The requested over color name
+        alpha: float, default 0.05.
+         Out-of-range color transparency
+
+        Returns
+        -------
+        cmap: colormap object
+        """
+
+        cmap=plt.get_cmap(name)
+        if under is not False:
+            cmap.set_under(color=undercolor,alpha=alpha)
+        if over is not False:
+            cmap.set_over(color=overcolor, alpha=alpha)
+
+        return cmap
+
+
+    def plotScatter(self,data,plotField,ax=None,scatter_properties=dict(),ax_functions_properties=dict()):
+
+
+        """
+        Make a scatter plot for selected plotField vs. daily time (in 24 hours)
+
+        Parameters
+        ----------
+        data : dask or pandas dataframe
+        plotField : string.
+            The data column name to plot
+        ax : Axes object, optional
+            Axes object to plot in
+        scatter_properties : dict, optional
+            dict with parameters to add/update the default dict passed to seaborn.scatterplot
+        ax_functions_properties : dict, optional
+            A dict with axes functions to add/replace the default functions applied on the ax
+
+        returns
+        -------
+        ax : The axes object
+        """
+
+        if ax is None:
+            fig, ax = plt.subplots()
+        else:
+            plt.sca(ax)
+
+        scatter_props = dict(self.scatterdict)
+        scatter_props.update(scatter_properties)
+
+        curdata = data.dropna(subset=[plotField])
+
+        curdata = curdata.query("%s > -9990" % plotField)
+        curdata = curdata.assign(curdate=curdata.index)
+        curdata = curdata.assign(houronly=curdata.curdate.dt.hour + curdata.curdate.dt.minute / 60.)
+
+        ax_func_props = dict(self.plotfieldaxfuncdict.get(plotField, dict()))
+        ax_func_props.update(self.axfuncdict)
+        ax_func_props.update(ax_functions_properties)
+
+
+        ax= seaborn.scatterplot(curdata['houronly'], curdata[plotField], ax=ax, **scatter_props)
+
+        for func in ax_func_props:
+            getattr(ax, func)(ax_func_props[func])
+
+        return ax
+
+
+    def plotProbContourf(self, data, plotField, levels=None, scatter=True, withLabels=True, colorbar=True, ax=None, scatter_properties=dict(),
+                         contour_values=dict(), contour_properties=dict(), contourf_properties=dict(), labels_properties=dict(),
+                         ax_functions_properties=dict(), normalization='max_normalized'):
+
+
+        """
+        Make a probability contour plot for unique values in 24 hours
+
+        Parameters
+        ----------
+
+        data: dask or pandas dataframe.
+            The data to plot
+        plotField : string.
+            The data column name to plot
+        levels : list, optional.
+            Overrides the defaults values of countour and countourf levels
+        scatter : boolean. default is True
+            Whether or not to add a scatterplot of the data
+        withLabels : boolean. default is True
+            Whether or not to add a labels to the contour lines
+        colorbar : boolean. default is True
+            Whether or not to add a colorbar
+        ax : Axes object, optional
+            Axes object to plot in
+        scatter_properties : dict, optional
+            dict with parameters to add/update the default dict passed to seaborn.scatterplot
+        contour_values : dict, optional
+            A dict with parameters to add/update the default contour and contourf *values*
+            passed to _getCountourDict and _getCountourfDict
+        contour_properties : dict, optional
+            A dict with contour parameters to add/replace the default contour parmeters passed to plt.contour
+        contourf_properties : dict, optional
+            A dict with contourf parameters to add/replace the default contour parmeters passed to plt.contourf
+        labels_properties : dict, optional
+            A dict with labels parameters to add/replace the default labels parmeters passed to ax.clabel
+        ax_functions_properties : dict, optional
+            A dict with axes functions to add/replace the default functions applied on the ax
+        normalization : string, default 'max_normalized'
+            The method of data normalization. see hera.analytics.statistics.calcDist2d for more details
+
+        Returns
+        ------
+
+        CS : contour set
+        CSF : contourf set
+        ax : The axes object
+        """
+
+        # Compute histogram #
+
+        x_hist, y_hist, M_hist = calcHourlyDist(data, plotField, normalization=normalization)
+
+
+        # Read and update contour and contourf properties #
+
+        conrourvals_props=dict(self.contourvalsdict)
+        conrourvals_props.update(contour_values)
+
+        contour_props = self._getCountourDict(conrourvals_props)
+        contourf_props = self._getContourfDict(conrourvals_props)
+
+
+        if normalization=='y_normalized':
+            contour_props.update(dict(levels= numpy.linspace(conrourvals_props['under_value'],
+                                                             numpy.ceil(M_hist.max() * 100) / 100,
+                                                             conrourvals_props['contourfnum'])[::conrourvals_props['contourskip']]))
+
+
+            contourf_props.update(dict(levels=numpy.round(numpy.linspace(conrourvals_props['under_value'],
+                                                                         numpy.ceil(M_hist.max() * 100) / 100,
+                                                                         conrourvals_props['contourfnum']), 2)))
+
+
+        contour_props.update(contour_properties)
+        contourf_props.update(contourf_properties)
+
+        # Read and update axes properties #
+
+        ax_func_props = dict(self.plotfieldaxfuncdict.get(plotField, dict()))
+        ax_func_props.update(self.axfuncdict)
+        ax_func_props.update(ax_functions_properties)
+
+
+        countour_levels = contour_props.pop("levels")
+        countourf_levels = contourf_props.pop("levels")
+
+        # Read and update levels and labels properties #
+
+        labels_props = dict(self.labelsdict)
+        if normalization == 'y_normalized':
+            labels_props.update(dict(levels= numpy.linspace(conrourvals_props['under_value'],
+                                                            numpy.ceil(M_hist.max() * 100) / 100,
+                                                            conrourvals_props['contourfnum'])[::conrourvals_props['contourskip']]))
+
+        if levels is not None:
+            countour_levels = levels
+            countourf_levels = levels
+            del labels_props['levels']
+
+        # Plot scatter, conrour and contourf #
+
+        if ax is None:
+            fig, ax = plt.subplots()
+        else:
+            plt.sca(ax)
+
+        if scatter==True:
+
+            ax = self.plotScatter(data,plotField,ax=ax,scatter_properties=scatter_properties)
+
+        CS = plt.contour(x_hist, y_hist, M_hist,levels=countour_levels,**contour_props)
+
+        if withLabels==True:
+
+            labels_props.update(labels_properties)
+            labels_list = labels_props.pop("levels",CS.levels)
+
+            ax.clabel(CS, labels_list,**labels_props)
+
+        CSF= plt.contourf(x_hist, y_hist, M_hist,levels=countourf_levels ,**contourf_props)
+
+
+        # Apply ax functions from ax_func_props
+
+        for func in ax_func_props:
+            getattr(ax, func)(ax_func_props[func])
+
+        if colorbar==True:
+            plt.colorbar(ax=ax, ticks=countourf_levels)
+
+
+        return CS,CSF,ax
 
 
 
