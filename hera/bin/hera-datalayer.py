@@ -142,7 +142,9 @@ def help_handler(arguments):
                 "    load\tLoad documents to the database",
                 "    delete\tDelete documents from the database",
                 "    copyTo\tCopy documents from the current user database to a destination database",
-                "    copyFrom\tCopy documents from a destination database to the current user database"
+                "    copyFrom\tCopy documents from a destination database to the current user database\n",
+                "For more information about each command:",
+                "   hera-datalayer help <command>"
                 ]
         print("\n".join(help))
     else:
