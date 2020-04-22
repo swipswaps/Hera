@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import pandas
 import glob
 import numpy
@@ -15,7 +17,7 @@ from ... utils import andClause
 from ... analytics import statistics
 
 from hera.measurements.meteorological.analytics.statistics import calcHourlyDist
-from hera.measurements import meteorological
+
 
 class DataLoader(object):
 
@@ -484,7 +486,7 @@ class SeasonalPlots(plots):
             qstring = 'monthonly in %s' % self.seasonsdict.get(season)['monthes']
             seasondata=curdata.query(qstring)
 
-            CS,CSF,ax_i=meteorological.dailyplots.plotProbContourf(seasondata, plotField, ax=ax[axPosition[0], axPosition[1]],
+            CS,CSF,ax_i=DailyPlots().plotProbContourf(seasondata, plotField, ax=ax[axPosition[0], axPosition[1]],
                                                                    colorbar=False, levels = levels, scatter = scatter, withLabels = withLabels,
                                                                    scatter_properties = scatter_properties, contour_values = contour_values,
                                                                    contour_properties = contour_properties, contourf_properties = contourf_properties,
