@@ -201,19 +201,25 @@ class convert():
 
         print("Mesh boundaries x=(%s,%s) ; y=(%s,%s)" % (xmin, xmax, ymin, ymax))
         # 1.2 build the mesh.
+        print(gpandas)
         grid_x, grid_y = numpy.mgrid[(xmin):(xmax):dxdy, (ymin):(ymax):dxdy]
-
+        print(1)
         # 2. Get the points from the geom
         Height = []
         XY = []
-
+        print(1)
         for i, line in enumerate(gpandas.iterrows()):
+            print(2)
             if isinstance(line[1]['geometry'], LineString):
+                if i%100==0:
+                    print(i)
                 linecoords = [x for x in line[1]['geometry'].coords]
                 lineheight = [line[1]['HEIGHT']] * len(linecoords)
                 XY += linecoords
                 Height += lineheight
             else:
+                if i%100==0:
+                    print(i, 2323)
                 for ll in line[1]['geometry']:
                     linecoords = [x for x in ll.coords]
                     lineheight = [line[1]['HEIGHT']] * len(linecoords)
@@ -222,7 +228,7 @@ class convert():
         if flat is not None:
             for i in range(len(Height)):
                 Height[i] = flat
-
+        print(2)
         grid_z2 = griddata(XY, Height, (grid_x, grid_y), method='cubic')
         numpy.nan_to_num(grid_z2, nan=min(Height), copy=False)
 
