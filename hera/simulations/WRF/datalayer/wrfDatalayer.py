@@ -114,7 +114,7 @@ class wrfDatalayer():
                 query_dict = {changes[0]: request_i}
                 query_dictU = {changes[1]: request_i_u}
                 query_dictV = {changes[2]: request_i_v}
-                xnewdata = xdata.isel(bottom_top=j).interp(**query_dict, Time=i)
+                xnewdata = xdata.isel(bottom_top=j, bottom_top_stag=j).interp(**query_dict, Time=i)
                 if lat is not None:
                     new_u = xdata.isel(bottom_top=j).interp(**query_dictU, Time=i).U[:-1]
                     new_v = xdata.isel(bottom_top=j).interp(**query_dictV, Time=i).V
@@ -129,6 +129,7 @@ class wrfDatalayer():
                 new_d = pandas.DataFrame(dict(height = height.isel(bottom_top=j).interp(**query_dict),
                                               U=new_u,
                                               V=new_v,
+                                              W=xnewdata.W,
                                               Time=new_t,
                                               terrain=ter.interp(**query_dict),
                                               LAT=xnewdata.XLAT,

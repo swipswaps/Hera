@@ -5,10 +5,7 @@ from .simulations import LSM
 from .simulations.LSM.DataLayer import SingleSimulation
 from .measurements import GIS
 from .simulations import WRF
-import sys
-version = sys.version_info[0]
-if version==2:
-    from .simulations import openfoam
+from .simulations import openfoam
 
 
 """
