@@ -82,6 +82,7 @@ class process():
             print(1)
             datalat = wrfdatalayer.getPandas(datapath=wrfPath, Time=Time, lon=data.gridxMin[0], heightLimit=wrfZ).query("LAT>=%s and LAT<=%s" % (data.gridyMin[0],data.gridyMax[0]))
             print(2)
+            print(data.gridyMax[0])
             datalong = wrfdatalayer.getPandas(datapath=wrfPath, Time=Time, lat=data.gridyMax[0], heightLimit=wrfZ).query("LONG>=%s and LONG<=%s" % (data.gridxMin[0],data.gridxMax[0]))
             newData = pandas.concat([datalat.iloc[(datalat['height']-wrfZ).abs().argsort()[:2]],
                                      datalong.iloc[(datalong['height']-wrfZ).abs().argsort()[:2]]])

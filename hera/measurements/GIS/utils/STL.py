@@ -99,7 +99,7 @@ class convert():
             newdata = newdata.reset_index()
             if addtoDB:
                 self.addSTLtoDB(p, NewFileName, points=points, xMin=newdata["gridxMin"][0], xMax=newdata["gridxMax"][0],
-                                yMin=newdata["gridxMin"][0], yMax=newdata["gridxMax"][0], zMin=newdata["gridxMin"][0], zMax=newdata["gridxMax"][0], **kwargs)
+                                yMin=newdata["gridyMin"][0], yMax=newdata["gridyMax"][0], zMin=newdata["gridzMin"][0], zMax=newdata["gridzMax"][0], **kwargs)
 
         return stlstr, newdata
 
