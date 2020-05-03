@@ -100,9 +100,14 @@ class wrfDatalayer():
         else:
             H_vals.append(len(xdata.bottom_top))
 
-        for i in request_i_time:
 
-            ter = wrf.getvar(data, "ter", timeidx=int(i))
+        ter = wrf.getvar(data, "ter")
+
+        for i in request_i_time:
+            if Time is None:
+                height = wrf.getvar(data, "z", timeidx=i)
+            else:
+                height = wrf.getvar(data, "z", timeidx=wrf.ALL_TIMES).interp(Time=pTime)
 
             for j in range(max(H_vals)):
 
@@ -121,8 +126,7 @@ class wrfDatalayer():
                 else:
                     new_t = pTime
 
-                new_d = pandas.DataFrame(dict(height=(xnewdata.isel(bottom_top_stag=j).PH+xnewdata.isel(bottom_top_stag=j).PHB)/9.81,
-                                              height2 = wrf.getvar(data, "z", timeidx=int(i)).interp(bottom_top=j,**query_dict),
+                new_d = pandas.DataFrame(dict(height = height.isel(bottom_top=j).interp(**query_dict),
                                               U=new_u,
                                               V=new_v,
                                               Time=new_t,
