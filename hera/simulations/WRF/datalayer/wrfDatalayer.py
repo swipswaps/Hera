@@ -114,13 +114,13 @@ class wrfDatalayer():
                 query_dict = {changes[0]: request_i}
                 query_dictU = {changes[1]: request_i_u}
                 query_dictV = {changes[2]: request_i_v}
-                xnewdata = xdata.isel(bottom_top=j, bottom_top_stag=j).interp(**query_dict, Time=i)
+                xnewdata = xdata.isel(bottom_top=j, bottom_top_stag=j).interp(Time=i, **query_dict)
                 if lat is not None:
-                    new_u = xdata.isel(bottom_top=j).interp(**query_dictU, Time=i).U[:-1]
-                    new_v = xdata.isel(bottom_top=j).interp(**query_dictV, Time=i).V
+                    new_u = xdata.isel(bottom_top=j).interp(Time=i, **query_dictU).U[:-1]
+                    new_v = xdata.isel(bottom_top=j).interp(Time=i, **query_dictV).V
                 elif lon is not None:
-                    new_u = xdata.isel(bottom_top=j).interp(**query_dictU, Time=i).U
-                    new_v = xdata.isel(bottom_top=j).interp(**query_dictV, Time=i).V[:-1]
+                    new_u = xdata.isel(bottom_top=j).interp(Time=i, **query_dictU).U
+                    new_v = xdata.isel(bottom_top=j).interp(Time=i, **query_dictV).V[:-1]
                 if Time is None:
                     new_t = wrf.getvar(data, "time", timeidx=i).values
                 else:

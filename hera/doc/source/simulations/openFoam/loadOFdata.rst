@@ -85,7 +85,7 @@ for example,
 
 .. code-block:: python
 
-    hera-loadOF "Development/Hera/hera/simulations/openfoam/postprocess/dir" "test" "Example"
+    hera-loadOF load "Development/Hera/hera/simulations/openfoam/postprocess/dir" "test" "Example"
 
 This command saves the results of each filter in a parquet file.
 A document that links to the parquet is added to the database.
@@ -100,4 +100,4 @@ If one wishes to keep the hdf files, it can be done by adding "--keepHDF" at the
 
 .. code-block:: python
 
-    hera-loadOF "Development/Hera/hera/simulations/openfoam/postprocess/dir" "test" "Example" --keepHDF
+    hera-loadOF load "Development/Hera/hera/simulations/openfoam/postprocess/dir" "test" "Example" --keepHDF

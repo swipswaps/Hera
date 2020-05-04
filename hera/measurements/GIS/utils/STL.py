@@ -26,7 +26,7 @@ class convert():
         self._Measurments = datalayer.Measurements
         self._manipulator = dataManipulations()
 
-    def addSTLtoDB(self, path, NewFileName, points, xMin, xMax, yMin, yMax, zMin, zMax, **kwargs):
+    def addSTLtoDB(self, path, NewFileName, points, xMin, xMax, yMin, yMax, zMin, zMax, dxdy, **kwargs):
         """
         Adds a path to the dataframe under the type 'stlType'.
 
@@ -48,7 +48,7 @@ class convert():
                                       resource=path,
                                       dataFormat="string")
 
-    def toSTL(self, data, NewFileName, dxdy=None, save=True, addtoDB=True, flat=None, path=None, **kwargs):
+    def toSTL(self, data, NewFileName, dxdy=50, save=True, addtoDB=True, flat=None, path=None, **kwargs):
 
         """
         Converts a geopandas dataframe data to an stl file.
@@ -82,9 +82,9 @@ class convert():
         ymin = geodata['geometry'].bounds['miny'].min()
         ymax = geodata['geometry'].bounds['maxy'].max()
         points = [xmin, ymin, xmax, ymax]
-        if len(datalayer.Measurements.getDocuments(projectName=self._projectName, type="stlFile", bounds=points)) >0:
-            stlstr = datalayer.Measurements.getDocuments(projectName=self._projectName, type="stlFile", bounds=points)[0].getData()
-            newdict = datalayer.Measurements.getDocuments(projectName=self._projectName, type="stlFile", bounds=points)[0].asDict()
+        if len(datalayer.Measurements.getDocuments(projectName=self._projectName, type="stlFile", bounds=points, dxdy=dxdy)) >0:
+            stlstr = datalayer.Measurements.getDocuments(projectName=self._projectName, type="stlFile", bounds=points, dxdy=dxdy)[0].getData()
+            newdict = datalayer.Measurements.getDocuments(projectName=self._projectName, type="stlFile", bounds=points, dxdy=dxdy)[0].asDict()
             newdata = pandas.DataFrame(dict(gridxMin=[newdict["desc"]["xMin"]], gridxMax=[newdict["desc"]["xMax"]],
                                             gridyMin=[newdict["desc"]["yMin"]], gridyMax=[newdict["desc"]["yMax"]],
                                             gridzMin=[newdict["desc"]["zMin"]], gridzMax=[newdict["desc"]["zMax"]]))
@@ -99,7 +99,7 @@ class convert():
             newdata = newdata.reset_index()
             if addtoDB:
                 self.addSTLtoDB(p, NewFileName, points=points, xMin=newdata["gridxMin"][0], xMax=newdata["gridxMax"][0],
-                                yMin=newdata["gridyMin"][0], yMax=newdata["gridyMax"][0], zMin=newdata["gridzMin"][0], zMax=newdata["gridzMax"][0], **kwargs)
+                                yMin=newdata["gridyMin"][0], yMax=newdata["gridyMax"][0], zMin=newdata["gridzMin"][0], zMax=newdata["gridzMax"][0], dxdy=dxdy, **kwargs)
 
         return stlstr, newdata
 

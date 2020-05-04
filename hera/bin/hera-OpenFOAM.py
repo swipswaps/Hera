@@ -75,7 +75,7 @@ def load_handler(arguments):
 
         # Adding a link to the parquet to the database
 
-        datalayer.Measurements.addDocument(projectName=projectName, desc=dict(**metadata, filter=key, pipeline=pipelinestr), type="OFsimulation",
+        datalayer.Measurements.addDocument(projectName=projectName, desc=dict(filter=key, pipeline=pipelinestr, **metadata), type="OFsimulation",
                                            resource="%s/%s/parquet/%s.parquet" % (path, name, key), dataFormat="parquet")
 
     #   Delete hdf directory
