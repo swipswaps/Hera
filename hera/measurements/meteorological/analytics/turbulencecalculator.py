@@ -890,6 +890,236 @@ class TurbulenceCalculator(AbstractCalculator):
 
         return ret
 
+    def StrucFunDir(self, tau_range = None, dir1_data = None, u_dir1 = "u_dir1", v_dir1 = "v_dir1", w_dir1 = "w_dir1",
+                    dir2_data = None, u_dir2 = "u_dir2", v_dir2 = "v_dir2", w_dir2 = "w_dir2", title = "", inMemory = None):
+
+        if self._InMemoryAvgRef is None:
+            self._InMemoryAvgRef = inMemory
+
+        if dir2_data is None:
+            dir2_data = dir1_data
+            u_dir2 = u_dir1
+            v_dir2 = v_dir1
+            w_dir2 = w_dir1
+
+        col_names = {tau:"D" + title + "_" + str(tau) + "s" for tau in tau_range}
+        if set(col_names.values()).issubset(set(self._TemporaryData.columns)):
+            # self._TemporaryData = self._TemporaryData.loc[(self._TemporaryData.index >= self.Identifier["start"]) &
+            #                                               (self._TemporaryData.index < self.Identifier["end"])]
+            return self
+
+        self.fluctuations()
+
+        # Extracting ...
+        dir1_data_new = dir1_data[[u_dir1,v_dir1,w_dir1]]\
+                       .rename(columns = {u_dir1: "u_dir1", v_dir1: "v_dir1", w_dir1: "w_dir1"})\
+                       .loc[(dir1_data.index >= self.Identifier["start"]) & (dir1_data.index < self.Identifier["end"])]
+
+        # Computing ...
+        dir1_data_new["dir1_mag"] = (dir1_data_new["u_dir1"] ** 2 + dir1_data_new["v_dir1"] ** 2 + dir1_data_new["w_dir1"] ** 2) ** 0.5
+
+        dir1_data_new.loc[:,['u_dir1','v_dir1','w_dir1']] = dir1_data_new.loc[:,['u_dir1','v_dir1','w_dir1']].div(dir1_data_new["dir1_mag"], axis=0)
+
+        dir1_data_new = dir1_data_new.drop(columns = 'dir1_mag')
+
+        dir2_data_new = dir2_data[[u_dir2,v_dir2,w_dir2]]\
+                       .rename(columns = {u_dir2: "u_dir2", v_dir2: "v_dir2", w_dir2: "w_dir2"})\
+                       .loc[(dir2_data.index >=self.Identifier["start"]) & (dir2_data.index < self.Identifier["end"])]
+
+        dir2_data_new["dir2_mag"] = (dir2_data_new["u_dir2"] ** 2 + dir2_data_new["v_dir2"] ** 2 + dir2_data_new["w_dir2"] ** 2) ** 0.5
+
+        dir2_data_new.loc[:,['u_dir2','v_dir2','w_dir2']] = dir2_data_new.loc[:,['u_dir2','v_dir2','w_dir2']].div(dir2_data_new["dir2_mag"], axis=0)
+
+        dir2_data_new = dir2_data_new.drop(columns = 'dir2_mag')
+        # u_mag_new = u_magnitude_data.rename("u_mag").loc[(u_magnitude_data.index >=  self.Identifier["start"]) &
+        #                         (u_magnitude_data.index < self.Identifier["end"])]
+
+        to_drop = set(self._RawData.columns) & {"u_dir1", "v_dir1", "w_dir1", "u_dir2", "v_dir2", "w_dir2"}
+        if bool(to_drop):
+            self._RawData = self._RawData.drop(columns = to_drop)
+
+
+        united_data = self._RawData.merge(dir1_data_new, how = "outer", left_index = True, right_index = True)\
+                           .merge(dir2_data_new, how = "outer", left_index = True, right_index = True)\
+                           .dropna(how='all')
+
+        united_data[["u_dir1", "v_dir1", "w_dir1", "u_dir2", "v_dir2", "w_dir2"]].ffill().dropna(how='any')
+
+        united_data["ui"] = 0
+        united_data["uj"] = 0
+        for component in ["u","v","w"]:
+            united_data["ui"] += united_data[component]*united_data["%s_dir1" % component]
+            united_data["uj"] += united_data[component] * united_data["%s_dir2" % component]
+
+        #print("RawData",[self._RawData.get_partition(n) for n in range(self._RawData.npartitions)])
+        for tau in tau_range:
+            if col_names[tau] not in self._TemporaryData.columns:
+                data_tau = united_data[["ui","uj"]].reset_index()
+                data_tau["Time"] -= pandas.Timedelta(tau, unit="s")
+
+                data_tau = data_tau.set_index("Time").rename(columns = {"ui":"ui_shifted","uj":"uj_shifted"})
+                print("data_tau", [data_tau.get_partition(n) for n in range(data_tau.npartitions)])
+                to_drop = set(united_data.columns) & {"ui_shifted", "uj_shifted"}
+                if bool(to_drop):
+                    united_data = united_data.drop(columns = to_drop)
+                united_data = united_data.merge(data_tau, how = "left", left_index = True, right_index = True).repartition(freq = "1D")
+
+                #print("RawData", [self._RawData.get_partition(n) for n in range(self._RawData.npartitions)])
+
+                self._TemporaryData[col_names[tau]] = ((united_data["ui_shifted"] - united_data["ui"]) *\
+                                                 (united_data["uj_shifted"] - united_data["uj"])).resample(self.SamplingWindow).mean()
+                self._CalculatedParams.append([col_names[tau],{}])
+
+        # self._TemporaryData = self._TemporaryData.loc[(self._TemporaryData.index >= self.Identifier["start"]) &
+        #                                               (self._TemporaryData.index < self.Identifier["end"])]
+        return self
+
+    def StrucFun(self, tau_range = None, ubar_data = None, u_bar = "u_bar", v_bar = "v_bar", w_bar = "w_bar",
+                     mode = "MeanDir", title_additions = "", inMemory = None):
+
+        if self._InMemoryAvgRef is None:
+            self._InMemoryAvgRef = inMemory
+
+        if ubar_data is None:
+            self.fluctuations()
+            ubar_data = self._TemporaryData[["u_bar","v_bar","w_bar"]].compute()
+
+        if mode == "MeanDir":
+            self.StrucFunDir(tau_range=tau_range, dir1_data=ubar_data, u_dir1=u_bar, v_dir1=v_bar, w_dir1=w_bar, title = "11" + title_additions)
+
+        if mode == "3dMeanDir":
+            ubar_new = ubar_data[[u_bar,v_bar,w_bar]].rename(columns = {u_bar:"x_hat1",v_bar:"x_hat2",w_bar:"x_hat3"})
+            ubar_new["y_hat1"] = - ubar_new["x_hat2"]
+            ubar_new["y_hat2"] = ubar_new["x_hat1"]
+            ubar_new["y_hat3"] = 0
+            ubar_new["z_hat1"] = - ubar_new["x_hat1"] * ubar_new["x_hat3"]
+            ubar_new["z_hat2"] = - ubar_new["x_hat2"] * ubar_new["x_hat3"]
+            ubar_new["z_hat3"] = ubar_new["x_hat1"] ** 2 +  ubar_new["x_hat2"] ** 2
+
+            self.StrucFunDir(tau_range=tau_range, dir1_data=ubar_new, u_dir1="x_hat1", v_dir1="x_hat2", w_dir1="x_hat3", title="11" + title_additions)
+            self.StrucFunDir(tau_range=tau_range, dir1_data=ubar_new, u_dir1="y_hat1", v_dir1="y_hat2", w_dir1="y_hat3", title="22" + title_additions)
+            self.StrucFunDir(tau_range=tau_range, dir1_data=ubar_new, u_dir1="z_hat1", v_dir1="z_hat2", w_dir1="z_hat3", title="33" + title_additions)
+            self.StrucFunDir(tau_range=tau_range, dir1_data=ubar_new, u_dir1="x_hat1", v_dir1="x_hat2", w_dir1="x_hat3",
+                             dir2_data = ubar_new, u_dir2="y_hat1", v_dir2="y_hat2", w_dir2="y_hat3",title="12" + title_additions)
+            self.StrucFunDir(tau_range=tau_range, dir1_data=ubar_new, u_dir1="x_hat1", v_dir1="x_hat2", w_dir1="x_hat3",
+                             dir2_data = ubar_new, u_dir2="z_hat1", v_dir2="z_hat2", w_dir2="z_hat3",title="13" + title_additions)
+            self.StrucFunDir(tau_range=tau_range, dir1_data=ubar_new, u_dir1="y_hat1", v_dir1="y_hat2", w_dir1="y_hat3",
+                             dir2_data = ubar_new, u_dir2="z_hat1", v_dir2="z_hat2", w_dir2="z_hat3",title="23" + title_additions)
+
+        self._TemporaryData["u_mag" + title_additions] = ((ubar_data[u_bar] ** 2 + ubar_data[v_bar] ** 2 + ubar_data[w_bar] ** 2) ** 0.5).loc[(ubar_data.index >=
+                                self.Identifier["start"]) & (ubar_data.index < self.Identifier["end"])]
+        self._TemporaryData["u_mag" + title_additions] = self._TemporaryData["u_mag" + title_additions].ffill()
+        self._CalculatedParams.append(["u_mag" + title_additions,{}])
+        return self
+
+    def StrucFun_eps(self, tau_range = None, ubar_data = None, u_bar = "u_bar", v_bar = "v_bar", w_bar = "w_bar",
+                     mode = "MeanDir", title_additions = "", rmin = 0, rmax = 10, inMemory = None):
+        """
+
+        :param tau_range: date
+               date
+        :param ubar_data:
+        :param u_bar:
+        :param v_bar:
+        :param w_bar:
+        :param mode:
+        :param title_additions:
+        :param rmin:
+        :param rmax:
+        :param inMemory:
+        :return:
+        """
+
+        self.StrucFun(tau_range = tau_range, ubar_data = ubar_data, u_bar = u_bar, v_bar = v_bar, w_bar = w_bar,
+                     mode = mode, title_additions = title_additions)
+
+        a = 0.52
+        col_names = {tau:"D11" + title_additions + "_" + str(tau) + "s" for tau in tau_range}
+        data = self._TemporaryData[list(col_names.values()) + ["u_mag" + title_additions]].compute()
+        # estimations = pandas.DataFrame(index=self._TemporaryData.index.compute(), columns = col_names.values())
+        estimations = pandas.DataFrame(index=data.index, columns=col_names.values())
+        for tau in tau_range:
+            data_temp = ((a * data[col_names[tau]]) ** (3 / 2)) / (tau * data["u_mag" + title_additions])
+            mask = (tau * data["u_mag" + title_additions] < rmax) & (tau * data["u_mag" + title_additions] > rmin)
+            # estimations[col_names[tau]] = ((((a * self._TemporaryData[col_names[tau]]) ** (3 / 2)) / (tau * self._TemporaryData["u_mag"])).compute())\
+            #     .loc[((tau * self._TemporaryData["u_mag" + title_additions] < rmax) & (tau * self._TemporaryData["u_mag" + title_additions] > rmin)).compute()]
+            estimations[col_names[tau]] = data_temp.loc[mask]
+
+        self._TemporaryData["eps_D11"] = estimations.mean(axis=1)
+        self._CalculatedParams.append(["eps_D11",{}])
+
+        return self
+
+    def ThirdStrucFun(self, tau_range = None, ubar_data = None, u_bar = "u_bar", v_bar = "v_bar", w_bar = "w_bar",
+                     title_additions = "", inMemory = None):
+
+        if self._InMemoryAvgRef is None:
+            self._InMemoryAvgRef = inMemory
+
+        self.fluctuations()
+        if ubar_data is None:
+            ubar_data = self._TemporaryData[["u_bar","v_bar","w_bar"]].compute()
+
+        col_names = {tau:"D111" + title_additions + "_" + str(tau) + "s" for tau in tau_range}
+        if set(col_names.values()).issubset(set(self._TemporaryData.columns)):
+            # self._TemporaryData = self._TemporaryData.loc[(self._TemporaryData.index >= self.Identifier["start"]) &
+            #                                               (self._TemporaryData.index < self.Identifier["end"])]
+            return self
+
+        dir_data = ubar_data[[u_bar,v_bar,w_bar]].rename(columns={u_bar: "u_dir", v_bar: "v_dir", w_bar: "w_dir"}).loc[
+            (ubar_data.index >=self.Identifier["start"]) & (ubar_data.index < self.Identifier["end"])]
+        dir_data["u_mag"] = (dir_data["u_dir"] ** 2 + dir_data["v_dir"] ** 2 + dir_data["w_dir"] ** 2) ** 0.5
+        dir_data.loc[:, ['u_dir', 'v_dir', 'w_dir']] = dir_data.loc[:, ['u_dir', 'v_dir', 'w_dir']].div(dir_data["u_mag"], axis=0)
+
+        to_drop = set(self._RawData.columns) & {"u_dir", "v_dir", "w_dir", "u1_shifted"}
+        if bool(to_drop):
+            self._RawData = self._RawData.drop(columns = to_drop)
+        self._RawData = self._RawData.merge(dir_data[['u_dir', 'v_dir', 'w_dir']], how="outer", left_index=True, right_index=True)
+        self._RawData = self._RawData.dropna(how='all')
+        self._RawData[["u_dir", "v_dir", "w_dir"]] = self._RawData[["u_dir", "v_dir", "w_dir"]].ffill()
+        self._RawData = self._RawData.dropna(how='any')
+
+        self._RawData["u1"] = self._RawData["u"] * self._RawData["u_dir"] + self._RawData["v"] * self._RawData["v_dir"] + \
+                              self._RawData["w"] * self._RawData["w_dir"]
+
+        for tau in tau_range:
+            if col_names[tau] not in self._TemporaryData.columns:
+                data_tau = self._RawData[["u1"]].reset_index()
+                data_tau["Time"] -= pandas.Timedelta(tau, unit="s")
+                data_tau = data_tau.set_index("Time").rename(columns = {"u1":"u1_shifted"})
+                if "u1_shifted" in self._RawData.columns:
+                    self._RawData = self._RawData.drop(columns = "u1_shifted")
+                self._RawData = self._RawData.merge(data_tau, how = "left", left_index = True, right_index = True)
+                self._TemporaryData[col_names[tau]] = ((self._RawData["u1_shifted"] - self._RawData["u1"]) ** 3).resample(self.SamplingWindow).mean()
+                self._CalculatedParams.append([col_names[tau],{}])
+
+        self._TemporaryData["u_mag" + title_additions] = dir_data["u_mag"]
+        self._TemporaryData["u_mag" + title_additions] = self._TemporaryData["u_mag" + title_additions].ffill()
+        self._CalculatedParams.append(["u_mag" + title_additions,{}])
+
+        # self._TemporaryData = self._TemporaryData.loc[(self._TemporaryData.index >= self.Identifier["start"]) &
+        #                                               (self._TemporaryData.index < self.Identifier["end"])]
+
+        return self
+
+    def ThirdStrucFun_eps(self, tau_range = None, ubar_data = None, u_bar = "u_bar", v_bar = "v_bar", w_bar = "w_bar",
+                      title_additions = "", rmin = 0, rmax = 10, inMemory = None):
+
+        self.ThirdStrucFun(tau_range = tau_range, ubar_data = ubar_data, u_bar = u_bar, v_bar = v_bar, w_bar = w_bar,
+                     title_additions = title_additions)
+
+        col_names = {tau:"D111" + title_additions + "_" + str(tau) + "s" for tau in tau_range}
+        data = self._TemporaryData[list(col_names.values()) + ["u_mag" + title_additions]].compute()
+        estimations = pandas.DataFrame(index=data.index, columns=col_names.values())
+        for tau in tau_range:
+            data_temp = 1.25 * data[col_names[tau]] / (tau * data["u_mag" + title_additions])
+            mask = (tau * data["u_mag" + title_additions] < rmax) & (tau * data["u_mag" + title_additions] > rmin)
+            estimations[col_names[tau]] = data_temp.loc[mask]
+
+        self._TemporaryData["eps_D111"] = estimations.mean(axis=1)
+        self._CalculatedParams.append(["eps_D111",{}])
+
+        return self
 
 
 class TurbulenceCalculatorSpark(TurbulenceCalculator):
